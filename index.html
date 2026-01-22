@@ -563,8 +563,8 @@ const DONJON = [
   {name:"Prophétie", color:"#2C2C54"}
 ].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
 
-/* PRESET_SIZES — tailles de police (px) par activité (déclaré globalement) */
-window.PRESET_SIZES = {
+/* PRESET_SIZES — tailles de police (px) par activité */
+const PRESET_SIZES = {
   "Désert Perpétuel": 20,
   "Serment du Disciple": 20,
   "Origine des Cauchemars": 20,
@@ -577,7 +577,7 @@ window.PRESET_SIZES = {
 
   "Équilibre": 20,
   "Ruine de la Guerrière": 20,
-  "Fantôme des Profondeurs": 1,
+  "Fantôme des Profondeurs": 10,
   "Flèche de la Vigie": 20,
   "Trône Brisé": 20,
   "Hôte Vesper": 20,
@@ -641,126 +641,56 @@ function buildPalettes(){
 }
 buildPalettes();
 
-/* ---------- RENDER ACTIVITY LIST + MODAL HANDLERS (MODIFIÉ) ---------- */
-
 /* render activity list */
 function renderActivityList(){
-  if(!activityList) return;
   activityList.innerHTML = '';
-
-  const cat = categorySelect ? categorySelect.value : 'raid';
+  const cat = categorySelect.value;
   let list = [];
-
   if(cat === 'raid') list = RAID;
   else if(cat === 'donjon') list = DONJON;
-  else if(cat === 'libre'){
-    activityList.innerHTML = '<div class="activity-item">Aucune sélection nécessaire</div>';
-    currentSelectedActivity = { name:"Activité libre", color:"#ffffff", custom:false };
-    highlightSelected();
-    return;
-  }
-
+  else if(cat === 'libre'){ activityList.innerHTML = '<div class="activity-item">Aucune sélection nécessaire</div>'; currentSelectedActivity = { name:"Activité libre", color:"#ffffff", custom:false }; return; }
   if(cat === 'custom'){
-    const wrap = document.createElement('div');
-    wrap.className = 'activity-item';
-    wrap.textContent = 'Cliquer pour saisir une activité personnalisée';
-    wrap.style.cursor = 'pointer';
-    wrap.addEventListener('click', ()=>{
-      const name = prompt("Nom de l'activité personnalisée :","Nouvelle activité") || "Activité personnalisée";
-      currentSelectedActivity = { name, color: nameColorPicker ? nameColorPicker.value : '#ffffff', custom:true, preferredFontSize: PRESET_SIZES[name] || 28 };
-      highlightSelected();
-    });
-    activityList.appendChild(wrap);
-    highlightSelected();
-    return;
+    const wrap = document.createElement('div'); wrap.className='activity-item'; wrap.textContent='Cliquer pour saisir une activité personnalisée';
+    wrap.addEventListener('click', ()=>{ const name = prompt("Nom de l'activité personnalisée :","Nouvelle activité") || "Activité personnalisée"; currentSelectedActivity = { name, color:'#ffffff', custom:true }; highlightSelected(); });
+    activityList.appendChild(wrap); return;
   }
-
-  // build list items with data-name for reliable matching
   list.forEach(a=>{
-    const it = document.createElement('div');
-    it.className = 'activity-item';
-    it.setAttribute('data-name', a.name);
-    it.innerHTML = `<div class="activity-item-name" style="display:inline-block;vertical-align:middle">${escapeHtml(a.name)}</div>
-                    <div style="display:inline-block;float:right;width:18px;height:18px;background:${a.color};border-radius:2px;margin-left:8px;"></div>`;
-    it.style.padding = '8px 10px';
-    it.style.cursor = 'pointer';
-    it.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-    it.style.color = '#cfcfcf';
-    it.style.userSelect = 'none';
-
-    it.addEventListener('click', ()=>{
-      currentSelectedActivity = {
-        name: a.name,
-        color: a.color,
-        preferredFontSize: PRESET_SIZES[a.name] || 28,
-        custom: false
-      };
-      if(nameColorPicker) nameColorPicker.value = a.color;
-      highlightSelected();
-    });
-
+    const it = document.createElement('div'); it.className='activity-item';
+    it.innerHTML = `<div>${a.name}</div><div style="width:18px;height:18px;background:${a.color};"></div>`;
+    it.addEventListener('click', ()=>{ currentSelectedActivity = { name:a.name, color:a.color, custom:false }; nameColorPicker.value = a.color; highlightSelected(); });
     activityList.appendChild(it);
   });
-
-  // auto-select first if nothing selected
-  setTimeout(()=>{
-    if(!currentSelectedActivity && activityList.firstChild && activityList.firstChild.getAttribute('data-name')){
-      activityList.firstChild.click();
-    } else {
-      highlightSelected();
-    }
-  }, 0);
 }
-
-/* highlight selected item in the list */
 function highlightSelected(){
-  if(!activityList) return;
-  Array.from(activityList.children).forEach(ch=>{
-    ch.classList.remove('selected');
-    ch.style.background = '';
-    ch.style.color = '#cfcfcf';
-  });
+  Array.from(activityList.children).forEach(ch=> ch.classList.remove('selected'));
   if(!currentSelectedActivity) return;
-  const name = currentSelectedActivity.name;
-  const match = Array.from(activityList.children).find(it => it.getAttribute('data-name') === name);
-  if(match){
-    match.classList.add('selected');
-    match.style.background = 'rgba(255,255,255,0.08)';
-    match.style.color = '#fff';
-  } else {
-    // handle custom / libre items which may not have data-name
-    const textMatch = Array.from(activityList.children).find(it => it.textContent.trim().startsWith(name));
-    if(textMatch){
-      textMatch.classList.add('selected');
-      textMatch.style.background = 'rgba(255,255,255,0.08)';
-      textMatch.style.color = '#fff';
-    }
-  }
+  const items = Array.from(activityList.children);
+  const idx = items.findIndex(it => it.textContent.trim().startsWith(currentSelectedActivity.name));
+  if(idx>=0) items[idx].classList.add('selected');
 }
 
-/* open modal for a given key */
+/* open modal */
 function openModalForKey(key){
   currentKey = key;
   const s = state[key] || {};
-  // reset modal fields to defaults
-  if(categorySelect) categorySelect.value = 'raid';
-  if(specialSelect) specialSelect.value = 'none';
-  if(specialName) { specialName.style.display = 'none'; specialName.value = ''; }
-  if(specialRules) specialRules.value = '';
-  if(nameColorPicker) nameColorPicker.value = '#ffffff';
-  if(tagColorPicker) tagColorPicker.value = '#ffd400';
-  if(tagHex) tagHex.value = '#ffd400';
+  categorySelect.value = 'raid';
+  specialSelect.value = 'none';
+  specialName.style.display = 'none';
+  specialName.value = '';
+  specialRules.value = '';
+  nameColorPicker.value = '#ffffff';
+  tagColorPicker.value = '#ffd400';
+  tagHex.value = '#ffd400';
   currentSelectedActivity = null;
 
-  // prefill from state if present
   if(s.activity){
-    const inRaid = RAID.find(r=>r.name === s.activity.name);
-    const inDonjon = DONJON.find(d=>d.name === s.activity.name);
+    const inRaid = RAID.find(r=>r.name===s.activity.name);
+    const inDonjon = DONJON.find(d=>d.name===s.activity.name);
     if(inRaid) categorySelect.value = 'raid';
     else if(inDonjon) categorySelect.value = 'donjon';
     else categorySelect.value = 'custom';
     currentSelectedActivity = {...s.activity};
-    if(nameColorPicker) nameColorPicker.value = s.activity.color || '#ffffff';
+    nameColorPicker.value = s.activity.color || '#ffffff';
   }
 
   if(s.special){
@@ -772,20 +702,17 @@ function openModalForKey(key){
   }
 
   // prefill font sizes if present
-  if(mainFontSizeRange) mainFontSizeRange.value = (s.activity && s.activity.preferredFontSize) ? s.activity.preferredFontSize : 28;
-  if(mainFontSizeValue) mainFontSizeValue.textContent = mainFontSizeRange.value + 'px';
-  if(specialFontSizeRange) specialFontSizeRange.value = (s.special && s.special.preferredFontSize) ? s.special.preferredFontSize : 20;
-  if(specialFontSizeValue) specialFontSizeValue.textContent = specialFontSizeRange.value + 'px';
+  mainFontSizeRange.value = (s.activity && s.activity.preferredFontSize) ? s.activity.preferredFontSize : 28;
+  mainFontSizeValue.textContent = mainFontSizeRange.value + 'px';
+  specialFontSizeRange.value = (s.special && s.special.preferredFontSize) ? s.special.preferredFontSize : 20;
+  specialFontSizeValue.textContent = specialFontSizeRange.value + 'px';
 
-  // render list and highlight selection
   renderActivityList();
   highlightSelected();
-
-  // show modal overlay
-  if(modalBack) modalBack.style.display = 'flex';
+  modalBack.style.display = 'flex';
 }
 
-/* ensure slot clicks open modal (keeps existing behavior) */
+/* click slots */
 document.querySelectorAll('.slot').forEach(slot=>{
   slot.addEventListener('click', ()=>{
     const key = slot.dataset.day + '-' + slot.dataset.hour;
@@ -793,41 +720,15 @@ document.querySelectorAll('.slot').forEach(slot=>{
   });
 });
 
-/* modal events: when category changes, reset selection then render */
-if(categorySelect){
-  categorySelect.addEventListener('change', ()=>{
-    currentSelectedActivity = null;
-    renderActivityList();
-  });
-}
+/* modal events */
+categorySelect.addEventListener('change', ()=>{ renderActivityList(); currentSelectedActivity = null; });
+specialSelect.addEventListener('change', (e)=>{ const v=e.target.value; if(v==='custom'){ specialName.style.display='block'; specialName.focus(); } else { specialName.style.display='none'; specialName.value=''; } if(v==='roulette'){ tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--roulette-default').trim() || '#ffd400'; tagHex.value = tagColorPicker.value; specialRules.value = DEFAULT_RULES.roulette; } if(v==='special'){ tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--special-default').trim() || '#ff3b3b'; tagHex.value = tagColorPicker.value; specialRules.value = DEFAULT_RULES.special; } if(v==='none'){ specialRules.value=''; } });
 
-/* special select handling (kept as before) */
-if(specialSelect){
-  specialSelect.addEventListener('change', (e)=>{
-    const v = e.target.value;
-    if(v === 'custom'){ specialName.style.display = 'block'; specialName.focus(); }
-    else { specialName.style.display = 'none'; specialName.value = ''; }
-    if(v === 'roulette'){
-      tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--roulette-default').trim() || '#ffd400';
-      tagHex.value = tagColorPicker.value;
-      specialRules.value = DEFAULT_RULES.roulette;
-    }
-    if(v === 'special'){
-      tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--special-default').trim() || '#ff3b3b';
-      tagHex.value = tagColorPicker.value;
-      specialRules.value = DEFAULT_RULES.special;
-    }
-    if(v === 'none'){ specialRules.value = ''; }
-  });
-}
+tagColorPicker.addEventListener('input', ()=> tagHex.value = tagColorPicker.value);
+tagHex.addEventListener('input', ()=> { const v = tagHex.value.trim(); if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) tagColorPicker.value = v; });
 
-/* color inputs sync */
-if(tagColorPicker) tagColorPicker.addEventListener('input', ()=> tagHex.value = tagColorPicker.value);
-if(tagHex) tagHex.addEventListener('input', ()=> { const v = tagHex.value.trim(); if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) tagColorPicker.value = v; });
-
-/* font size preview */
-if(mainFontSizeRange) mainFontSizeRange.addEventListener('input', ()=> mainFontSizeValue.textContent = mainFontSizeRange.value + 'px');
-if(specialFontSizeRange) specialFontSizeRange.addEventListener('input', ()=> specialFontSizeValue.textContent = specialFontSizeRange.value + 'px');
+mainFontSizeRange.addEventListener('input', ()=> mainFontSizeValue.textContent = mainFontSizeRange.value + 'px');
+specialFontSizeRange.addEventListener('input', ()=> specialFontSizeValue.textContent = specialFontSizeRange.value + 'px');
 
 /* default rules */
 const DEFAULT_RULES = {
@@ -842,26 +743,15 @@ saveBtn.addEventListener('click', ()=>{
   // activité principale
   let activity = null;
   if(categorySelect.value === 'custom'){
-    if(currentSelectedActivity && currentSelectedActivity.custom) {
-      activity = {...currentSelectedActivity, color: nameColorPicker.value};
-    } else {
-      const name = prompt("Nom de l'activité personnalisée :","Activité") || "Activité";
-      activity = { name, color: nameColorPicker.value, custom: true };
-    }
+    if(currentSelectedActivity && currentSelectedActivity.custom) activity = {...currentSelectedActivity, color:nameColorPicker.value};
+    else { const name = prompt("Nom de l'activité personnalisée :","Activité") || "Activité"; activity = { name, color:nameColorPicker.value, custom:true }; }
   } else {
-    if(currentSelectedActivity) {
-      activity = {...currentSelectedActivity, color: nameColorPicker.value};
-    } else {
-      const list = categorySelect.value === 'raid' ? RAID : DONJON;
-      const first = list[0];
-      activity = { name: first.name, color: first.color };
-    }
+    if(currentSelectedActivity) activity = {...currentSelectedActivity, color:nameColorPicker.value};
+    else { const list = categorySelect.value === 'raid' ? RAID : DONJON; const first = list[0]; activity = { name:first.name, color:first.color }; }
   }
 
   if(activity){
-    // priorité : valeur choisie dans le modal > currentSelectedActivity.preferredFontSize > PRESET_SIZES > 28
-    const modalMainSize = (typeof mainFontSizeRange !== 'undefined' && mainFontSizeRange.value) ? parseInt(mainFontSizeRange.value,10) : null;
-    activity.preferredFontSize = modalMainSize || (currentSelectedActivity && currentSelectedActivity.preferredFontSize) || PRESET_SIZES[activity.name] || 28;
+    activity.preferredFontSize = parseInt(mainFontSizeRange.value,10) || 28;
   }
 
   // activité spéciale
@@ -869,54 +759,26 @@ saveBtn.addEventListener('click', ()=>{
   let special = null;
   if(type !== 'none'){
     const name = type === 'custom' ? (specialName.value.trim() || 'Personnalisée') : (type === 'roulette' ? 'Roulette' : 'Soirée spéciale');
-    let rules = (specialRules && specialRules.value) ? specialRules.value.trim() : '';
+    let rules = specialRules.value.trim();
     if (!rules) {
       if (type === 'roulette') rules = DEFAULT_RULES.roulette;
       else if (type === 'special') rules = DEFAULT_RULES.special;
-      else rules = "";
+      else rules = ""; 
     }
-
-    // couleur et taille du tag spécial
-    const tagColor = (tagColorPicker && tagColorPicker.value) ? tagColorPicker.value : '#ffffff';
-    const modalSpecialSize = (typeof specialFontSizeRange !== 'undefined' && specialFontSizeRange.value) ? parseInt(specialFontSizeRange.value,10) : null;
-    const presetSpecialSize = PRESET_SIZES[name] || 20;
-
-    special = {
-      name,
-      color: tagColor,
-      rules,
-      preferredFontSize: modalSpecialSize || presetSpecialSize
-    };
+    const color = tagColorPicker.value || '#ffffff';
+    special = { type, name, rules, color };
+    special.preferredFontSize = parseInt(specialFontSizeRange.value,10) || 20;
   }
 
-  // écrire dans l'état
-  state[currentKey] = {
-    activity: activity,
-    special: special
-  };
-
-  // fermer modal et rafraîchir
-  closeModal();
-  if (typeof refreshGrid === 'function') refreshGrid();
-
+  state[currentKey] = { activity, special };
+  modalBack.style.display = 'none';
   currentKey = null;
   currentSelectedActivity = null;
+  refreshGrid();
 });
 
 /* cancel */
-cancelBtn.addEventListener('click', ()=>{ closeModal(); });
-
-/* closeModal implementation */
-function closeModal(){
-  if(modalBack) modalBack.style.display = 'none';
-  // reset selection highlight inside modal
-  Array.from(activityList.children || []).forEach(ch=>{
-    ch.classList.remove('selected');
-    ch.style.background = '';
-    ch.style.color = '#cfcfcf';
-  });
-  currentSelectedActivity = null;
-}
+cancelBtn.addEventListener('click', ()=>{ modalBack.style.display='none'; currentKey=null; currentSelectedActivity=null; });
 
 /* escape html util */
 function escapeHtml(str) {
