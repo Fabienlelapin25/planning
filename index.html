@@ -3,10 +3,15 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Planning V16 — Corrigé</title>
+<title>Planning V16 — Final (corrigé)</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
+/* =========================
+   VARIABLES DE POSITION (modifier ici en px)
+   - change les valeurs en px pour déplacer les éléments
+   - tu peux aussi appeler setLayout(...) depuis la console
+   ========================= */
 :root{
   /* canvas / grid sizes */
   --canvas-w:1536px;
@@ -17,35 +22,15 @@
   --slot-gap:12px;
   --border-w:3px;
 
-  /* typographie (restaurées) */
+  /* typographie */
   --font-day:28px;
   --font-time:36px;
   --font-activity:28px;
-  --font-tag:20px;
+  --font-tag:24px;
   --rules-font:20px;
 
-  /* position topbar (affichage) */
-  --topbar-left: 710px;
-  --topbar-top: 8px;
-
-  /* position grid & rules */
-  --grid-left: 45px;
-  --grid-top: 200px;
-  --rules-left: 128px;
-  --rules-top: 640px;
-
-  /* export offsets (permet de compenser la position visuelle sans déplacer l'export) */
-  --export-topbar-offset-x: 0px;
-  --export-topbar-offset-y: 0px;
-}
-
-/* agrandir et accentuer le label "Règles" dans la zone rules */
-.rules > .small {
-  font-size: 20px;      /* ajuste selon ton goût */
-  font-weight: 700;
-  letter-spacing: 0.2px;
-}
-
+  /* --- nouvelle variable : taille du label "Règles :" (modifiable) --- */
+  --rules-label-font-size: 22px;
 
   /* couleurs */
   --default-tag-color:#ffffff;
@@ -53,12 +38,22 @@
   --special-default:#ff3b3b;
 
   /* POSITIONS (modifiable en px) */
-  --topbar-left: 600px;
-  --topbar-top: 8px;
-  --grid-left: 45px;
-  --grid-top: 200px;
-  --rules-left: 128px;
-  --rules-top: 640px;
+  --topbar-left: 540px;    /* left du topbar (px) */
+  --topbar-top: 8px;       /* top du topbar (px) */
+  --grid-left: 45px;       /* left du grid-wrap (px) */
+  --grid-top: 200px;       /* top du grid-wrap (px) */
+  --rules-left: 128px;     /* left de la zone rules (px) */
+  --rules-top: 640px;      /* top de la zone rules (px) */
+
+  /* offsets pour éléments individuels (translate) */
+  --displayStart-offset-x: 0px;
+  --displayStart-offset-y: 0px;
+  --displayEnd-offset-x: 0px;
+  --displayEnd-offset-y: 0px;
+  --export-offset-x: 0px;
+  --export-offset-y: 0px;
+  --reset-offset-x: 0px;
+  --reset-offset-y: 0px;
 }
 
 /* base */
@@ -131,10 +126,10 @@ html,body{
   cursor: pointer;
   font-weight: 800;
 }
-.btn-primary{ background: #1f6feb; color: #fff; }
-.btn-ghost{ background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.4); }
+.btn-primary{ background: #1f6feb; color: #fff; transform: translate(var(--export-offset-x), var(--export-offset-y)); }
+.btn-ghost{ background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.4); transform: translate(var(--reset-offset-x), var(--reset-offset-y)); }
 
-/* input date invisible but usable: force transparency to avoid native white rendering */
+/* input date invisible mais positionné sous le bouton pour garantir l'ouverture du picker */
 .date-input{
   position: absolute;
   left: 0;
@@ -147,21 +142,7 @@ html,body{
   pointer-events: auto;
   -webkit-appearance: none;
   appearance: none;
-  color: transparent;          /* avoid native text showing */
-  caret-color: transparent;
 }
-
-/* force inner parts transparent for WebKit browsers */
-.date-input::-webkit-datetime-edit,
-.date-input::-webkit-datetime-edit-fields-wrapper,
-.date-input::-webkit-datetime-edit-text,
-.date-input::-webkit-datetime-edit-month-field,
-.date-input::-webkit-datetime-edit-day-field,
-.date-input::-webkit-datetime-edit-year-field {
-  color: transparent !important;
-  background: transparent !important;
-}
-
 .date-btn{
   position: relative;
   z-index: 2;
@@ -177,6 +158,11 @@ html,body{
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+/* translate offsets (contrôlables via variables) */
+#displayStart { transform: translate(var(--displayStart-offset-x), var(--displayStart-offset-y)); }
+#displayEnd   { transform: translate(var(--displayEnd-offset-x), var(--displayEnd-offset-y)); }
+
+.date-btn:focus{ outline: 2px solid rgba(255,255,255,0.12); }
 
 /* grid : position via variables */
 .grid-wrap{
@@ -256,7 +242,7 @@ html,body{
 }
 .tag {
   position: absolute;
-  bottom: 12px;
+  bottom: 12px;        /* distance depuis le bas de la case */
   left: 50%;
   transform: translateX(-50%);
   font-family: Cinzel, serif;
@@ -266,7 +252,6 @@ html,body{
   color: var(--default-tag-color);
   background: transparent;
   pointer-events: none;
-  text-align: center;
 }
 
 /* gear */
@@ -290,6 +275,11 @@ html,body{
   background:rgba(0,0,0,0.7);
   font-family:Cinzel,serif;font-size:var(--rules-font);
   display:none;flex-direction:column;gap:8px;
+}
+/* cible uniquement le label "Règles :" dans la zone .rules — taille contrôlable via la variable --rules-label-font-size */
+.rules > .small {
+  font-size: var(--rules-label-font-size);
+  font-weight: 800;
 }
 .rules .rule-line{
   padding:10px;border-radius:0;
@@ -336,10 +326,6 @@ html,body{
 }
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:100px}
 
-/* slider styles */
-#mainFontSizeRange, #specialFontSizeRange { width:100%; accent-color:#1f6feb; }
-#mainFontSizeValue, #specialFontSizeValue { opacity:0.9; }
-
 /* hide UI during capture (n'affecte pas la topbar hors du canvas) */
 .canvas.capture .gear,
 .canvas.capture .modal-back,
@@ -356,6 +342,9 @@ html,body{
 </style>
 </head>
 <body>
+<!-- (le reste du fichier peut suivre normalement) -->
+</body>
+</html>
 
   <!-- TOPBAR (placée en dehors du canvas pour ne pas être scalée) -->
   <div class="topbar" id="topbar" role="banner" aria-label="Barre supérieure">
@@ -423,7 +412,7 @@ html,body{
     </div>
   </div>
 
-<!-- MODAL (léger, conserve sliders pour tailles si besoin) -->
+<!-- MODAL -->
 <div class="modal-back" id="modalBack">
   <div class="modal" role="dialog" aria-modal="true">
     <h3>Éditer la case</h3>
@@ -444,18 +433,20 @@ html,body{
         <div id="activityList" class="activity-list"></div>
 
         <div style="height:8px"></div>
-        <div id="mainFontSizeWrap">
-          <div class="small">Taille du texte (activité principale)</div>
-          <input type="range" id="mainFontSizeRange" min="12" max="48" value="28" />
-          <div id="mainFontSizeValue" class="small" style="margin-top:6px">28px</div>
-        </div>
-
-        <div style="height:8px"></div>
         <div class="small">Couleur du nom</div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
           <div class="color-palette" id="namePalette"></div>
           <input type="color" id="nameColorPicker" value="#ffffff" />
         </div>
+
+        <!-- slider pour taille du texte activité principale -->
+        <div style="height:8px"></div>
+        <div class="small">Taille du texte (activité principale)</div>
+        <div class="slider-row">
+          <input type="range" id="activityFontRange" min="12" max="72" step="1" />
+          <div class="slider-value" id="activityFontValue">28px</div>
+        </div>
+
       </div>
 
       <!-- droite -->
@@ -474,13 +465,6 @@ html,body{
         <input type="text" id="specialName" placeholder="Nom du tag (si personnalisé)" style="display:none" />
 
         <div style="height:8px"></div>
-        <div id="specialFontSizeWrap">
-          <div class="small">Taille du tag (activité spéciale)</div>
-          <input type="range" id="specialFontSizeRange" min="10" max="36" value="20" />
-          <div id="specialFontSizeValue" class="small" style="margin-top:6px">20px</div>
-        </div>
-
-        <div style="height:8px"></div>
         <div class="small">Règles (modifiable)</div>
         <textarea id="specialRules" rows="5" placeholder="Texte des règles..."></textarea>
 
@@ -492,6 +476,15 @@ html,body{
         </div>
         <div style="height:6px"></div>
         <input type="text" id="tagHex" placeholder="#rrggbb" />
+
+        <!-- slider pour taille du tag (activité spéciale) -->
+        <div style="height:8px"></div>
+        <div class="small">Taille du texte (tag spécial)</div>
+        <div class="slider-row">
+          <input type="range" id="tagFontRange" min="10" max="48" step="1" />
+          <div class="slider-value" id="tagFontValue">20px</div>
+        </div>
+
       </div>
     </div>
 
@@ -504,6 +497,45 @@ html,body{
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
+/* layout (positions en px) — modifie ici si tu préfères */
+const layout = {
+  topbar: { left: 540, top: 8 },
+  grid:   { left: 45, top: 200 },
+  rules:  { left: 128, top: 640 },
+  offsets: {
+    displayStart: { x: 0, y: 0 },
+    displayEnd:   { x: 0, y: 0 },
+    export:       { x: 0, y: 0 },
+    reset:        { x: 0, y: 0 }
+  }
+};
+
+/* couleurs RAID / DONJON */
+const RAID_DATA = [
+  {name:"Désert Perpétuel", color:"#7B1FA2"},
+  {name:"Serment du Disciple", color:"#2E003E"},
+  {name:"Origine des Cauchemars", color:"#B00020"},
+  {name:"Jardin du Salut", color:"#2ECC71"},
+  {name:"Dernier Vœu", color:"#8E44AD"},
+  {name:"Crypte de la Pierre", color:"#5DADE2"},
+  {name:"Chute de Cropta", color:"#1ABC9C"},
+  {name:"Chute du Roi", color:"#d378b2"},
+  {name:"Caveau de Verre", color:"#1F8EFA"}
+].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
+
+const DONJON_DATA = [
+  {name:"Équilibre", color:"#BDC3C7"},
+  {name:"Ruine de la Guerrière", color:"#922B21"},
+  {name:"Fantôme des Profondeurs", color:"#154360"},
+  {name:"Flèche de la Vigie", color:"#F1C40F"},
+  {name:"Trône Brisé", color:"#6C3483"},
+  {name:"Hôte Vesper", color:"#2E86C1"},
+  {name:"Dualité", color:"#C0392B"},
+  {name:"Fosse de l’Hérésie", color:"#145A32"},
+  {name:"Étreinte de l’Avarice", color:"#F4D03F"},
+  {name:"Prophétie", color:"#2C2C54"}
+].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
+
 /* DOM refs */
 const root = document.documentElement;
 const canvas = document.getElementById('canvas');
@@ -532,97 +564,91 @@ const cancelBtn = document.getElementById('cancelBtn');
 const exportPng = document.getElementById('exportPng');
 const resetBtn = document.getElementById('resetBtn');
 
-const mainFontSizeRange = document.getElementById('mainFontSizeRange');
-const mainFontSizeValue = document.getElementById('mainFontSizeValue');
-const specialFontSizeRange = document.getElementById('specialFontSizeRange');
-const specialFontSizeValue = document.getElementById('specialFontSizeValue');
+/* sliders refs */
+const activityFontRange = document.getElementById('activityFontRange');
+const activityFontValue = document.getElementById('activityFontValue');
+const tagFontRange = document.getElementById('tagFontRange');
+const tagFontValue = document.getElementById('tagFontValue');
 
-/* small data sets (kept same as before) */
-const RAID = [
-  {name:"Désert Perpétuel", color:"#7B1FA2"},
-  {name:"Serment du Disciple", color:"#2E003E"},
-  {name:"Origine des Cauchemars", color:"#B00020"},
-  {name:"Jardin du Salut", color:"#2ECC71"},
-  {name:"Dernier Vœu", color:"#8E44AD"},
-  {name:"Crypte de la Pierre", color:"#5DADE2"},
-  {name:"Chute de Cropta", color:"#1ABC9C"},
-  {name:"Chute du Roi", color:"#d378b2"},
-  {name:"Caveau de Verre", color:"#1F8EFA"}
-].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
+/* expose setLayout to change positions from console */
+function applyLayoutFromObject(l){
+  if (!l) return;
+  if (l.topbar) {
+    root.style.setProperty('--topbar-left', (l.topbar.left ?? 540) + 'px');
+    root.style.setProperty('--topbar-top',  (l.topbar.top  ?? 8) + 'px');
+  }
+  if (l.grid) {
+    root.style.setProperty('--grid-left', (l.grid.left ?? 45) + 'px');
+    root.style.setProperty('--grid-top',  (l.grid.top  ?? 200) + 'px');
+  }
+  if (l.rules) {
+    root.style.setProperty('--rules-left', (l.rules.left ?? 128) + 'px');
+    root.style.setProperty('--rules-top',  (l.rules.top  ?? 640) + 'px');
+  }
+  if (l.offsets) {
+    const o = l.offsets;
+    root.style.setProperty('--displayStart-offset-x', (o.displayStart?.x ?? 0) + 'px');
+    root.style.setProperty('--displayStart-offset-y', (o.displayStart?.y ?? 0) + 'px');
+    root.style.setProperty('--displayEnd-offset-x',   (o.displayEnd?.x ?? 0) + 'px');
+    root.style.setProperty('--displayEnd-offset-y',   (o.displayEnd?.y ?? 0) + 'px');
+    root.style.setProperty('--export-offset-x',       (o.export?.x ?? 0) + 'px');
+    root.style.setProperty('--export-offset-y',       (o.export?.y ?? 0) + 'px');
+    root.style.setProperty('--reset-offset-x',        (o.reset?.x ?? 0) + 'px');
+    root.style.setProperty('--reset-offset-y',        (o.reset?.y ?? 0) + 'px');
+  }
+}
 
-const DONJON = [
-  {name:"Équilibre", color:"#BDC3C7"},
-  {name:"Ruine de la Guerrière", color:"#922B21"},
-  {name:"Fantôme des Profondeurs", color:"#154360"},
-  {name:"Flèche de la Vigie", color:"#F1C40F"},
-  {name:"Trône Brisé", color:"#6C3483"},
-  {name:"Hôte Vesper", color:"#2E86C1"},
-  {name:"Dualité", color:"#C0392B"},
-  {name:"Fosse de l’Hérésie", color:"#145A32"},
-  {name:"Étreinte de l’Avarice", color:"#F4D03F"},
-  {name:"Prophétie", color:"#2C2C54"}
-].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
+/* wrapper applyLayout (keeps backward compatibility with your applyLayout) */
+function applyLayout(){
+  // topbar is outside canvas: position relative to body via CSS variables
+  applyLayoutFromObject(layout);
+  // also set inline positions for legacy code that used style.left/top directly
+  if (layout.topbar) {
+    topbar.style.left = layout.topbar.left + 'px';
+    topbar.style.top = layout.topbar.top + 'px';
+  }
+  if (layout.grid) {
+    gridWrap.style.left = layout.grid.left + 'px';
+    gridWrap.style.top = layout.grid.top + 'px';
+  }
+  if (layout.rules) {
+    rulesArea.style.left = layout.rules.left + 'px';
+    rulesArea.style.top = layout.rules.top + 'px';
+  }
+}
 
-/* PRESET_SIZES — tailles de police (px) par activité */
-const PRESET_SIZES = {
-  "Désert Perpétuel": 20,
-  "Serment du Disciple": 20,
-  "Origine des Cauchemars": 20,
-  "Jardin du Salut": 20,
-  "Dernier Vœu": 20,
-  "Crypte de la Pierre": 20,
-  "Chute de Cropta": 20,
-  "Chute du Roi": 20,
-  "Caveau de Verre": 20,
-
-  "Équilibre": 20,
-  "Ruine de la Guerrière": 20,
-  "Fantôme des Profondeurs": 10,
-  "Flèche de la Vigie": 20,
-  "Trône Brisé": 20,
-  "Hôte Vesper": 20,
-  "Dualité": 20,
-  "Fosse de l’Hérésie": 20,
-  "Étreinte de l’Avarice": 20,
-  "Prophétie": 20,
-
-  "Activité libre": 20,
-  "Personnalisée": 20
-};
-
-/* state */
-let state = {};
-let currentKey = null;
-let currentSelectedActivity = null;
-
-/* helper: open native date picker reliably */
+/* util: ouvre le picker de date de façon fiable (showPicker si dispo, sinon fallback) */
 function openDatePicker(input){
   if (!input) return;
   if (typeof input.showPicker === 'function') {
     try { input.showPicker(); return; } catch(e){ /* fallback */ }
   }
   input.focus();
-  setTimeout(()=> { try { input.click(); } catch(e){} }, 10);
+  setTimeout(()=> {
+    try { input.click(); } catch(e){ /* certains navigateurs ignorent le click programmatique */ }
+  }, 10);
 }
-displayStart.addEventListener('click', ()=> openDatePicker(inputStart));
-displayEnd.addEventListener('click', ()=> openDatePicker(inputEnd));
 
-/* format short date */
+/* handlers pour les boutons d'affichage de date */
+displayStart.addEventListener('click', ()=> openDatePicker(inputStart));
+displayEnd.addEventListener('click',   ()=> openDatePicker(inputEnd));
+
+/* dates init & helpers */
 function formatShortDate(d){
   if(!d) return '—';
   const dt = new Date(d);
   return dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});
 }
-
-/* init dates */
 (function initDates(){
   const today = new Date();
   const day = today.getDay();
   const diffToMonday = (day === 0) ? -6 : (1 - day);
   const start = new Date(today); start.setDate(today.getDate() + diffToMonday);
   const end = new Date(start); end.setDate(start.getDate() + 5);
+
   inputStart.value = start.toISOString().slice(0,10);
   inputEnd.value = end.toISOString().slice(0,10);
+
   displayStart.textContent = formatShortDate(inputStart.value);
   displayEnd.textContent = formatShortDate(inputEnd.value);
 })();
@@ -641,38 +667,75 @@ function buildPalettes(){
 }
 buildPalettes();
 
-/* render activity list */
+/* liste activités */
 function renderActivityList(){
   activityList.innerHTML = '';
   const cat = categorySelect.value;
   let list = [];
-  if(cat === 'raid') list = RAID;
-  else if(cat === 'donjon') list = DONJON;
-  else if(cat === 'libre'){ activityList.innerHTML = '<div class="activity-item">Aucune sélection nécessaire</div>'; currentSelectedActivity = { name:"Activité libre", color:"#ffffff", custom:false }; return; }
-  if(cat === 'custom'){
-    const wrap = document.createElement('div'); wrap.className='activity-item'; wrap.textContent='Cliquer pour saisir une activité personnalisée';
-    wrap.addEventListener('click', ()=>{ const name = prompt("Nom de l'activité personnalisée :","Nouvelle activité") || "Activité personnalisée"; currentSelectedActivity = { name, color:'#ffffff', custom:true }; highlightSelected(); });
-    activityList.appendChild(wrap); return;
+  if(cat === 'raid') list = RAID_DATA;
+  else if(cat === 'donjon') list = DONJON_DATA;
+  
+  else if(cat === 'libre') {
+    activityList.innerHTML = '<div class="activity-item">Aucune sélection nécessaire</div>';
+    currentSelectedActivity = { name: "Activité libre", color: "#ffffff", custom:false };
+    return;
   }
+
+  if(cat === 'custom'){
+    const wrap = document.createElement('div');
+    wrap.className = 'activity-item';
+    wrap.textContent = 'Cliquer pour saisir une activité personnalisée';
+    wrap.addEventListener('click', ()=>{
+      const name = prompt("Nom de l'activité personnalisée :","Nouvelle activité") || "Activité personnalisée";
+      const color = "#ffffff";
+      currentSelectedActivity = { name, color, custom:true };
+      highlightSelected();
+    });
+    activityList.appendChild(wrap);
+    return;
+  }
+
   list.forEach(a=>{
     const it = document.createElement('div'); it.className='activity-item';
     it.innerHTML = `<div>${a.name}</div><div style="width:18px;height:18px;background:${a.color};"></div>`;
-    it.addEventListener('click', ()=>{ currentSelectedActivity = { name:a.name, color:a.color, custom:false }; nameColorPicker.value = a.color; highlightSelected(); });
+    it.addEventListener('click', ()=>{
+      currentSelectedActivity = { name:a.name, color:a.color, custom:false };
+      nameColorPicker.value = a.color;
+      highlightSelected();
+    });
     activityList.appendChild(it);
   });
 }
 function highlightSelected(){
-  Array.from(activityList.children).forEach(ch=> ch.classList.remove('selected'));
+  Array.from(activityList.children).forEach(ch=> ch.style.background='transparent');
   if(!currentSelectedActivity) return;
   const items = Array.from(activityList.children);
   const idx = items.findIndex(it => it.textContent.trim().startsWith(currentSelectedActivity.name));
-  if(idx>=0) items[idx].classList.add('selected');
+  if(idx>=0) items[idx].style.background = 'rgba(255,255,255,0.1)';
 }
 
-/* open modal */
+/* ouvrir modal */
+let state = {};
+let currentKey = null;
+let currentSelectedActivity = null;
+
+/* backups pour restaurer preview si annulation */
+const previewBackup = {};
+
+/* defaults for font sizes (from CSS variables) */
+function getDefaultActivityFont() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--font-activity').trim();
+  return parseInt(v) || 28;
+}
+function getDefaultTagFont() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--font-tag').trim();
+  return parseInt(v) || 20;
+}
+
 function openModalForKey(key){
   currentKey = key;
-  const s = state[key] || {};
+  const s = state[key];
+
   categorySelect.value = 'raid';
   specialSelect.value = 'none';
   specialName.style.display = 'none';
@@ -683,32 +746,59 @@ function openModalForKey(key){
   tagHex.value = '#ffd400';
   currentSelectedActivity = null;
 
-  if(s.activity){
-    const inRaid = RAID.find(r=>r.name===s.activity.name);
-    const inDonjon = DONJON.find(d=>d.name===s.activity.name);
+  if(s && s.activity){
+    const inRaid = RAID_DATA.find(r=>r.name===s.activity.name);
+    const inDonjon = DONJON_DATA.find(d=>d.name===s.activity.name);
     if(inRaid) categorySelect.value = 'raid';
     else if(inDonjon) categorySelect.value = 'donjon';
     else categorySelect.value = 'custom';
     currentSelectedActivity = {...s.activity};
     nameColorPicker.value = s.activity.color || '#ffffff';
   }
-
-  if(s.special){
+  if(s && s.special){
     specialSelect.value = s.special.type || 'none';
-    if(s.special.type === 'custom'){ specialName.style.display='block'; specialName.value = s.special.name || ''; }
+    if(s.special.type === 'custom'){
+      specialName.style.display='block';
+      specialName.value = s.special.name || '';
+    }
     specialRules.value = s.special.rules || '';
     tagColorPicker.value = s.special.color || '#ffd400';
     tagHex.value = s.special.color || '#ffd400';
   }
 
-  // prefill font sizes if present
-  mainFontSizeRange.value = (s.activity && s.activity.preferredFontSize) ? s.activity.preferredFontSize : 28;
-  mainFontSizeValue.textContent = mainFontSizeRange.value + 'px';
-  specialFontSizeRange.value = (s.special && s.special.preferredFontSize) ? s.special.preferredFontSize : 20;
-  specialFontSizeValue.textContent = specialFontSizeRange.value + 'px';
+  // préparer sliders: si la case a des tailles sauvegardées => use them, sinon fallback aux variables CSS
+  const defaultActivityFont = getDefaultActivityFont();
+  const defaultTagFont = getDefaultTagFont();
+
+  const savedActivityFont = s?.fontSizes?.activity ?? defaultActivityFont;
+  const savedTagFont = s?.fontSizes?.tag ?? defaultTagFont;
+
+  activityFontRange.value = savedActivityFont;
+  activityFontValue.textContent = savedActivityFont + 'px';
+  tagFontRange.value = savedTagFont;
+  tagFontValue.textContent = savedTagFont + 'px';
 
   renderActivityList();
   highlightSelected();
+
+  // preview: modify the clicked slot only (live preview)
+  const [day,hour] = key.split('-');
+  const slotSelector = `.slot[data-day="${day}"][data-hour="${hour}"]`;
+  const slotEl = document.querySelector(slotSelector);
+  if(slotEl){
+    // save backup for cancel
+    const nameEl = slotEl.querySelector('.activity-name');
+    const tagEl = slotEl.querySelector('.tag');
+    previewBackup[key] = {
+      nameFont: nameEl ? (nameEl.style.fontSize || '') : '',
+      tagFont: tagEl ? (tagEl.style.fontSize || '') : '',
+      tagExists: !!tagEl
+    };
+    // apply preview sizes
+    if(nameEl) nameEl.style.fontSize = savedActivityFont + 'px';
+    if(tagEl) tagEl.style.fontSize = savedTagFont + 'px';
+  }
+
   modalBack.style.display = 'flex';
 }
 
@@ -721,20 +811,59 @@ document.querySelectorAll('.slot').forEach(slot=>{
 });
 
 /* modal events */
-categorySelect.addEventListener('change', ()=>{ renderActivityList(); currentSelectedActivity = null; });
-specialSelect.addEventListener('change', (e)=>{ const v=e.target.value; if(v==='custom'){ specialName.style.display='block'; specialName.focus(); } else { specialName.style.display='none'; specialName.value=''; } if(v==='roulette'){ tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--roulette-default').trim() || '#ffd400'; tagHex.value = tagColorPicker.value; specialRules.value = DEFAULT_RULES.roulette; } if(v==='special'){ tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--special-default').trim() || '#ff3b3b'; tagHex.value = tagColorPicker.value; specialRules.value = DEFAULT_RULES.special; } if(v==='none'){ specialRules.value=''; } });
-
+categorySelect.addEventListener('change', ()=>{ currentSelectedActivity=null; renderActivityList(); });
+specialSelect.addEventListener('change', (e)=>{
+  const v = e.target.value;
+  if(v === 'custom'){ specialName.style.display='block'; specialName.focus(); }
+  else { specialName.style.display='none'; specialName.value=''; }
+  if(v === 'roulette'){
+    tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--roulette-default').trim() || '#ffd400';
+    tagHex.value = tagColorPicker.value;
+    specialRules.value = DEFAULT_RULES.roulette;
+  }
+  if(v === 'special'){
+    tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--special-default').trim() || '#ff3b3b';
+    tagHex.value = tagColorPicker.value;
+    specialRules.value = DEFAULT_RULES.special;
+  }
+  if(v === 'none'){
+    specialRules.value = '';
+  }
+});
 tagColorPicker.addEventListener('input', ()=> tagHex.value = tagColorPicker.value);
-tagHex.addEventListener('input', ()=> { const v = tagHex.value.trim(); if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) tagColorPicker.value = v; });
+tagHex.addEventListener('input', ()=>{
+  const v = tagHex.value.trim();
+  if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) tagColorPicker.value = v;
+});
 
-mainFontSizeRange.addEventListener('input', ()=> mainFontSizeValue.textContent = mainFontSizeRange.value + 'px');
-specialFontSizeRange.addEventListener('input', ()=> specialFontSizeValue.textContent = specialFontSizeRange.value + 'px');
-
-/* default rules */
+/* règles par défaut */
 const DEFAULT_RULES = {
   roulette: "Chaque joueur aura droit à 3 tirage ce qui déterminera l'arme qu'il devra garder tout le long du raid. Les tirages ne sont pas rétroactifs alors choisissez bien.",
   special: "Composition d'une majorité de joueurs expérimentés, afin de prendre le temps pour l'apprentissage d'activités considérées difficiles."
 };
+
+/* slider live listeners (mise à jour du preview sur la case courante) */
+function applyPreviewFontSizesToCurrentSlot(){
+  if(!currentKey) return;
+  const [day,hour] = currentKey.split('-');
+  const slotSelector = `.slot[data-day="${day}"][data-hour="${hour}"]`;
+  const slotEl = document.querySelector(slotSelector);
+  if(!slotEl) return;
+  const nameEl = slotEl.querySelector('.activity-name');
+  const tagEl = slotEl.querySelector('.tag');
+
+  const aSize = parseInt(activityFontRange.value);
+  const tSize = parseInt(tagFontRange.value);
+
+  if(nameEl) nameEl.style.fontSize = aSize + 'px';
+  if(tagEl) tagEl.style.fontSize = tSize + 'px';
+
+  activityFontValue.textContent = aSize + 'px';
+  tagFontValue.textContent = tSize + 'px';
+}
+
+activityFontRange.addEventListener('input', applyPreviewFontSizesToCurrentSlot);
+tagFontRange.addEventListener('input', applyPreviewFontSizesToCurrentSlot);
 
 /* save */
 saveBtn.addEventListener('click', ()=>{
@@ -743,22 +872,29 @@ saveBtn.addEventListener('click', ()=>{
   // activité principale
   let activity = null;
   if(categorySelect.value === 'custom'){
-    if(currentSelectedActivity && currentSelectedActivity.custom) activity = {...currentSelectedActivity, color:nameColorPicker.value};
-    else { const name = prompt("Nom de l'activité personnalisée :","Activité") || "Activité"; activity = { name, color:nameColorPicker.value, custom:true }; }
-  } else {
-    if(currentSelectedActivity) activity = {...currentSelectedActivity, color:nameColorPicker.value};
-    else { const list = categorySelect.value === 'raid' ? RAID : DONJON; const first = list[0]; activity = { name:first.name, color:first.color }; }
-  }
-
-  if(activity){
-    activity.preferredFontSize = parseInt(mainFontSizeRange.value,10) || 28;
+    if(currentSelectedActivity && currentSelectedActivity.custom){
+      activity = {...currentSelectedActivity, color:nameColorPicker.value};
+    }else{
+      const name = prompt("Nom de l'activité personnalisée :","Activité") || "Activité";
+      activity = { name, color:nameColorPicker.value };
+    }
+  }else{
+    if(currentSelectedActivity){
+      activity = {...currentSelectedActivity, color:nameColorPicker.value};
+    }else{
+      const list = categorySelect.value === 'raid' ? RAID_DATA : DONJON_DATA;
+      const first = list[0];
+      activity = { name:first.name, color:first.color };
+    }
   }
 
   // activité spéciale
   const type = specialSelect.value;
   let special = null;
   if(type !== 'none'){
-    const name = type === 'custom' ? (specialName.value.trim() || 'Personnalisée') : (type === 'roulette' ? 'Roulette' : 'Soirée spéciale');
+    const name = type === 'custom'
+      ? (specialName.value.trim() || 'Personnalisée')
+      : (type === 'roulette' ? 'Roulette' : 'Soirée spéciale');
     let rules = specialRules.value.trim();
     if (!rules) {
       if (type === 'roulette') rules = DEFAULT_RULES.roulette;
@@ -767,10 +903,15 @@ saveBtn.addEventListener('click', ()=>{
     }
     const color = tagColorPicker.value || '#ffffff';
     special = { type, name, rules, color };
-    special.preferredFontSize = parseInt(specialFontSizeRange.value,10) || 20;
   }
 
-  state[currentKey] = { activity, special };
+  // font sizes (sauvegarde par case)
+  const fontSizes = {
+    activity: parseInt(activityFontRange.value),
+    tag: parseInt(tagFontRange.value)
+  };
+
+  state[currentKey] = { activity, special, fontSizes };
   modalBack.style.display = 'none';
   currentKey = null;
   currentSelectedActivity = null;
@@ -778,19 +919,32 @@ saveBtn.addEventListener('click', ()=>{
 });
 
 /* cancel */
-cancelBtn.addEventListener('click', ()=>{ modalBack.style.display='none'; currentKey=null; currentSelectedActivity=null; });
+cancelBtn.addEventListener('click', ()=>{
+  // restore preview backup if exists
+  if(currentKey && previewBackup[currentKey]){
+    const [day,hour] = currentKey.split('-');
+    const slotSelector = `.slot[data-day="${day}"][data-hour="${hour}"]`;
+    const slotEl = document.querySelector(slotSelector);
+    if(slotEl){
+      const nameEl = slotEl.querySelector('.activity-name');
+      const tagEl = slotEl.querySelector('.tag');
+      const b = previewBackup[currentKey];
+      if(nameEl) nameEl.style.fontSize = b.nameFont || '';
+      if(tagEl) {
+        tagEl.style.fontSize = b.tagFont || '';
+      } else if(b.tagExists){
+        // if tag previously existed but currently not in DOM, nothing to do
+      }
+    }
+    delete previewBackup[currentKey];
+  }
 
-/* escape html util */
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+  modalBack.style.display='none';
+  currentKey=null;
+  currentSelectedActivity=null;
+});
 
-/* refresh grid (simple, applies preferred sizes but keeps layout stable) */
+/* refresh grid */
 function refreshGrid(){
   document.querySelectorAll('.slot').forEach(slot=>{
     const key = slot.dataset.day + '-' + slot.dataset.hour;
@@ -806,39 +960,37 @@ function refreshGrid(){
       slot.classList.remove('empty');
       nameEl.textContent = s.activity.name;
       nameEl.style.color = s.activity.color || '#ffffff';
-      // apply preferred font size if present
-      if (s.activity.preferredFontSize) nameEl.style.fontSize = s.activity.preferredFontSize + 'px';
-      else nameEl.style.fontSize = getComputedStyle(document.documentElement).getPropertyValue('--font-activity') || '28px';
 
+      // apply font size if stored for this case, otherwise leave CSS variable default
+      if(s.fontSizes && s.fontSizes.activity) nameEl.style.fontSize = s.fontSizes.activity + 'px';
+      else nameEl.style.fontSize = ''; // reset to CSS var
+
+      // bordure par défaut
       slot.style.border = `${borderW} solid rgba(255,255,255,0.4)`;
 
       if(s.special){
         const borderColor = s.special.color || '#ffffff';
+        // bordure = couleur du tag
         slot.style.border = `${borderW} solid ${borderColor}`;
 
+        // tag texte seul, Cinzel, couleur = borderColor
         const t = document.createElement('div');
         t.className = 'tag';
         t.textContent = s.special.name;
         t.style.color = borderColor;
         t.style.fontFamily = 'Cinzel, serif';
         t.style.background = 'transparent';
-        // allow wrapping for long tags
-        t.style.left = '12px';
-        t.style.right = '12px';
-        t.style.transform = 'none';
-        t.style.textAlign = 'center';
-        t.style.whiteSpace = 'normal';
-        t.style.wordBreak = 'break-word';
-        t.style.bottom = '12px';
-        if (s.special.preferredFontSize) t.style.fontSize = s.special.preferredFontSize + 'px';
-        else t.style.fontSize = getComputedStyle(document.documentElement).getPropertyValue('--font-tag') || '20px';
+
+        // apply stored tag font size or default
+        if(s.fontSizes && s.fontSizes.tag) t.style.fontSize = s.fontSizes.tag + 'px';
+
         content.appendChild(t);
       }
     }else{
       slot.classList.add('empty');
       nameEl.textContent = 'Vide';
       nameEl.style.color = '#ddd';
-      nameEl.style.fontSize = getComputedStyle(document.documentElement).getPropertyValue('--font-activity') || '28px';
+      nameEl.style.fontSize = ''; // reset
       slot.style.border = `${borderW} solid rgba(255,255,255,0.2)`;
     }
   });
@@ -848,96 +1000,114 @@ function refreshGrid(){
 /* rules */
 function updateRules(){
   const keys = Object.keys(state);
+
   const rouletteKey = keys.find(k => state[k]?.special?.type === 'roulette');
   const specialKey  = keys.find(k => state[k]?.special?.type === 'special');
   const customKey   = keys.find(k => state[k]?.special?.type === 'custom');
+
   const lines = [];
-  if(rouletteKey){ const s = state[rouletteKey].special; lines.push({ title:'Roulette', text:s.rules || DEFAULT_RULES.roulette, color:s.color || '#ffd400' }); }
-  if(specialKey){ const s = state[specialKey].special; lines.push({ title:'Soirée spéciale', text:s.rules || DEFAULT_RULES.special, color:s.color || '#ff3b3b' }); }
-  if(customKey){ const s = state[customKey].special; lines.push({ title: s.name || 'Personnalisée', text: s.rules || '', color: s.color || '#ffffff' }); }
-  if(!lines.length){ rulesArea.style.display='none'; rulesContent.innerHTML=''; } else { rulesArea.style.display='flex'; rulesContent.innerHTML = lines.map(l=>`<div class="rule-line" style="color:${l.color}"><strong>${l.title} :</strong> ${l.text}</div>`).join(''); }
+
+  if(rouletteKey){
+    const s = state[rouletteKey].special;
+    lines.push({
+      title: 'Roulette',
+      text: s.rules || DEFAULT_RULES.roulette,
+      color: s.color || '#ffd400'
+    });
+  }
+
+  if(specialKey){
+    const s = state[specialKey].special;
+    lines.push({
+      title: 'Soirée spéciale',
+      text: s.rules || DEFAULT_RULES.special,
+      color: s.color || '#ff3b3b'
+    });
+  }
+
+  if(customKey){
+    const s = state[customKey].special;
+    lines.push({
+      title: s.name || 'Personnalisée',
+      text: s.rules || '',
+      color: s.color || '#ffffff'
+    });
+  }
+
+  if(!lines.length){
+    rulesArea.style.display='none';
+    rulesContent.innerHTML='';
+  }else{
+    rulesArea.style.display='flex';
+    rulesContent.innerHTML = lines.map(l =>
+      `<div class="rule-line" style="color:${l.color}">
+         <strong>${l.title} :</strong> ${l.text}
+       </div>`
+    ).join('');
+  }
 }
 
 /* reset */
-resetBtn.addEventListener('click', ()=>{ if(!confirm('Réinitialiser toutes les cases ?')) return; state = {}; refreshGrid(); });
+resetBtn.addEventListener('click', ()=>{
+  if(!confirm('Réinitialiser toutes les cases ?')) return;
+  state = {};
+  refreshGrid();
+});
 
-/* export PNG: ensure dates visible and fonts loaded, inject dates into canvas for capture */
+/* export PNG
+   - on retire temporairement la transformation visuelle du wrapper et du canvas pour capturer la source propre
+   - finally garantit le nettoyage si html2canvas plante
+*/
 exportPng.addEventListener('click', async () => {
   try {
-    // Masquer UI non désirée
+    // masquer UI (n'affecte pas la topbar hors du canvas)
     canvas.classList.add('capture');
     modalBack.style.display = 'none';
+
+    // petit délai pour que le DOM applique la classe
     await new Promise(r => setTimeout(r, 120));
 
-    // attendre que les polices soient prêtes
-    if (document.fonts && typeof document.fonts.ready !== 'undefined') {
-      await document.fonts.ready;
-    }
-
-    // calculer position des boutons de date par rapport au canvas
-    // on récupère bounding rects et on convertit en coordonnées locales du canvas
-    const canvasRect = canvas.getBoundingClientRect();
-    const startRect = displayStart.getBoundingClientRect();
-    const endRect = displayEnd.getBoundingClientRect();
-
-    // position relative au canvas (en px)
-    const startLeft = startRect.left - canvasRect.left;
-    const startTop  = startRect.top  - canvasRect.top;
-    const endLeft   = endRect.left   - canvasRect.left;
-    const endTop    = endRect.top    - canvasRect.top;
-
-    // créer conteneur temporaire dans le canvas
+    // --- Créer une copie temporaire des dates DANS le canvas ---
     const tmpDates = document.createElement('div');
     tmpDates.className = 'export-dates-temp';
-    tmpDates.style.position = 'absolute';
-    tmpDates.style.pointerEvents = 'none';
-    tmpDates.style.zIndex = 9999;
-    tmpDates.style.background = 'transparent';
-
-    // créer éléments de date avec position absolue individuelle
-    const startEl = document.createElement('div');
-    startEl.className = 'export-date export-start';
-    startEl.textContent = displayStart.textContent || '—';
-    Object.assign(startEl.style, {
+    // récupérer textes (format affiché)
+    const startText = displayStart.textContent || '—';
+    const endText = displayEnd.textContent || '—';
+    tmpDates.innerHTML = `
+      <div class="export-date export-start">${startText}</div>
+      <div class="export-date export-end">${endText}</div>
+    `;
+    // style inline pour s'assurer qu'il est capturé correctement
+    Object.assign(tmpDates.style, {
       position: 'absolute',
-      left: (startLeft) + 'px',
-      top:  (startTop)  + 'px',
-      color: '#ffffff',
-      background: 'transparent',
-      fontFamily: '"Cinzel", serif',
-      fontWeight: '700',
-      fontSize: getComputedStyle(document.documentElement).getPropertyValue('--font-day') || '40px',
-      lineHeight: '1',
-      textShadow: '0 1px 0 rgba(0,0,0,0.6)',
-      transform: 'none',
-      whiteSpace: 'nowrap'
+      left: 'var(--topbar-left)',   // place approximative alignée avec topbar
+      top: 'calc(var(--topbar-top) + 6px)', // ajuster si besoin
+      width: 'var(--grid-width)',
+      display: 'flex',
+      gap: '12px',
+      justifyContent: 'flex-start',
+      alignItems: 'center',
+      pointerEvents: 'none',
+      zIndex: 999
     });
-
-    const endEl = document.createElement('div');
-    endEl.className = 'export-date export-end';
-    endEl.textContent = displayEnd.textContent || '—';
-    Object.assign(endEl.style, {
-      position: 'absolute',
-      left: (endLeft) + 'px',
-      top:  (endTop)  + 'px',
-      color: '#ffffff',
-      background: 'transparent',
-      fontFamily: '"Cinzel", serif',
-      fontWeight: '700',
-      fontSize: getComputedStyle(document.documentElement).getPropertyValue('--font-day') || '40px',
-      lineHeight: '1',
-      textShadow: '0 1px 0 rgba(0,0,0,0.6)',
-      transform: 'none',
-      whiteSpace: 'nowrap'
-    });
-
-    tmpDates.appendChild(startEl);
-    tmpDates.appendChild(endEl);
-
-    // injecter dans le canvas
+    // styles pour les deux dates (tu peux ajuster taille/couleur)
+    const css = document.createElement('style');
+    css.textContent = `
+      .export-dates-temp .export-date {
+        font-family: "Cinzel", serif;
+        font-weight: 700;
+        color: #ffffff;
+        font-size: var(--font-day);
+        line-height: 1;
+        margin-right: 18px;
+        text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+      }
+    `;
+    // injecter dans le canvas (avant capture)
+    canvas.appendChild(css);
     canvas.appendChild(tmpDates);
 
-    // sauvegarder et retirer les transforms pour capture propre
+    // sauvegarder transform actuel et le retirer pour capture propre
     const prevWrapperTransform = canvasWrapper ? canvasWrapper.style.transform : '';
     const prevWrapperOrigin = canvasWrapper ? canvasWrapper.style.transformOrigin : '';
     const prevCanvasTransform = canvas.style.transform;
@@ -950,10 +1120,10 @@ exportPng.addEventListener('click', async () => {
     canvas.style.transform = 'none';
     canvas.style.transformOrigin = 'top left';
 
-    // capture
+    // capture à haute résolution
     const img = await html2canvas(canvas, { scale: 2, useCORS: true, backgroundColor: null });
 
-    // restaurer transforms
+    // restaurer transform
     if (canvasWrapper) {
       canvasWrapper.style.transform = prevWrapperTransform;
       canvasWrapper.style.transformOrigin = prevWrapperOrigin;
@@ -961,22 +1131,27 @@ exportPng.addEventListener('click', async () => {
     canvas.style.transform = prevCanvasTransform;
     canvas.style.transformOrigin = prevCanvasOrigin;
 
-    // cleanup
+    // retirer l'élément temporaire et le style injecté
     tmpDates.remove();
+    css.remove();
 
-    // nom de fichier
+    // --- construire un nom de fichier sûr contenant les dates ---
+    // on récupère les valeurs ISO des inputs si disponibles, sinon on utilise le texte affiché
     function safeDateForFilename(inputValue, displayText) {
       if (inputValue) {
+        // inputValue est "YYYY-MM-DD" -> on convertit en "DD-MM-YYYY"
         const parts = inputValue.split('-');
         if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
       }
+      // fallback : tenter d'extraire jour/mois/année depuis le texte affiché
+      // ex: "12 janv." -> on retourne tel quel en remplaçant espaces par _
       return displayText.replace(/\s+/g, '_').replace(/[\/\\:]/g, '-');
     }
     const startSafe = safeDateForFilename(inputStart.value, displayStart.textContent);
     const endSafe = safeDateForFilename(inputEnd.value, displayEnd.textContent);
     const filename = `planning-${startSafe}_${endSafe}.png`;
 
-    // download
+    // télécharger
     const a = document.createElement('a');
     a.href = img.toDataURL('image/png');
     a.download = filename;
@@ -985,56 +1160,82 @@ exportPng.addEventListener('click', async () => {
   } catch (err) {
     alert('Erreur PNG : ' + (err && err.message ? err.message : err));
   } finally {
+    // s'assurer que la classe est toujours retirée
     canvas.classList.remove('capture');
     modalBack.style.display = 'none';
   }
 });
 
-/* date pickers fallback */
-inputStart.addEventListener('change', (e)=> { displayStart.textContent = formatShortDate(e.target.value); });
-inputEnd.addEventListener('change', (e)=> { displayEnd.textContent = formatShortDate(e.target.value); });
+
+/* date pickers: ouvrir input[type=date] via bouton et mettre à jour l'affichage */
+displayStart.addEventListener('click', ()=> {
+  inputStart.focus();
+  inputStart.click();
+});
+displayEnd.addEventListener('click', ()=> {
+  inputEnd.focus();
+  inputEnd.click();
+});
+inputStart.addEventListener('change', (e)=>{
+  displayStart.textContent = formatShortDate(e.target.value);
+});
+inputEnd.addEventListener('change', (e)=>{
+  displayEnd.textContent = formatShortDate(e.target.value);
+});
 
 /* init */
 (function init(){
+  applyLayout();
   renderActivityList();
   refreshGrid();
   function applyScale(){
     const canvasW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-w')) || 1536;
     const canvasH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-h')) || 1024;
+
     const scaleX = (window.innerWidth - 40) / canvasW;
     const scaleY = (window.innerHeight - 40) / canvasH;
+
     const scale = Math.min(scaleX, scaleY, 1);
+
+    // on scale le wrapper (pas le canvas directement) pour que la topbar (hors du canvas) ne soit pas affectée
     if (canvasWrapper) {
       canvasWrapper.style.transform = 'scale(' + scale + ')';
       canvasWrapper.style.transformOrigin = 'top left';
     } else {
+      // fallback si wrapper manquant
       canvas.style.transform = 'scale(' + scale + ')';
       canvas.style.transformOrigin = 'top left';
     }
   }
   applyScale();
   window.addEventListener('resize', applyScale);
+
+  // initialiser sliders par défaut (valeurs depuis CSS vars)
+  activityFontRange.value = getDefaultActivityFont();
+  activityFontValue.textContent = activityFontRange.value + 'px';
+  tagFontRange.value = getDefaultTagFont();
+  tagFontValue.textContent = tagFontRange.value + 'px';
 })();
 
-/* expose setLayout to change positions from console */
+/* API utilitaire : changer layout depuis la console
+   Exemple:
+     setLayout({ topbar:{left:100,top:20}, grid:{left:10,top:150}, offsets:{ displayStart:{x:10,y:0} } })
+*/
 window.setLayout = function(newLayout){
-  if(newLayout.topbar){
-    root.style.setProperty('--topbar-left', (newLayout.topbar.left ?? 540) + 'px');
-    root.style.setProperty('--topbar-top',  (newLayout.topbar.top  ?? 8) + 'px');
-    topbar.style.left = (newLayout.topbar.left ?? 540) + 'px';
-    topbar.style.top = (newLayout.topbar.top ?? 8) + 'px';
+  Object.assign(layout, newLayout);
+  applyLayoutFromObject(layout);
+  // keep inline positions for legacy code
+  if (newLayout.topbar) {
+    topbar.style.left = (newLayout.topbar.left ?? layout.topbar.left) + 'px';
+    topbar.style.top = (newLayout.topbar.top ?? layout.topbar.top) + 'px';
   }
-  if(newLayout.grid){
-    root.style.setProperty('--grid-left', (newLayout.grid.left ?? 45) + 'px');
-    root.style.setProperty('--grid-top',  (newLayout.grid.top  ?? 200) + 'px');
-    gridWrap.style.left = (newLayout.grid.left ?? 45) + 'px';
-    gridWrap.style.top = (newLayout.grid.top ?? 200) + 'px';
+  if (newLayout.grid) {
+    gridWrap.style.left = (newLayout.grid.left ?? layout.grid.left) + 'px';
+    gridWrap.style.top = (newLayout.grid.top ?? layout.grid.top) + 'px';
   }
-  if(newLayout.rules){
-    root.style.setProperty('--rules-left', (newLayout.rules.left ?? 128) + 'px');
-    root.style.setProperty('--rules-top',  (newLayout.rules.top  ?? 640) + 'px');
-    rulesArea.style.left = (newLayout.rules.left ?? 128) + 'px';
-    rulesArea.style.top = (newLayout.rules.top ?? 640) + 'px';
+  if (newLayout.rules) {
+    rulesArea.style.left = (newLayout.rules.left ?? layout.rules.left) + 'px';
+    rulesArea.style.top = (newLayout.rules.top ?? layout.rules.top) + 'px';
   }
 };
 </script>
