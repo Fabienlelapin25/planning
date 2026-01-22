@@ -1,0 +1,1180 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Planning V16 — Corrigé</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* canvas / grid sizes */
+  --canvas-w:1536px;
+  --canvas-h:1024px;
+  --grid-width:1280px;
+  --time-col-w:160px;
+  --slot-h:160px;
+  --slot-gap:12px;
+  --border-w:3px;
+
+  /* typographie (restaurées) */
+  --font-day:28px;
+  --font-time:36px;
+  --font-activity:28px;
+  --font-tag:20px;
+  --rules-font:20px;
+
+  /* position topbar (affichage) */
+  --topbar-left: 710px;
+  --topbar-top: 8px;
+
+  /* position grid & rules */
+  --grid-left: 45px;
+  --grid-top: 200px;
+  --rules-left: 128px;
+  --rules-top: 640px;
+
+  /* export offsets (permet de compenser la position visuelle sans déplacer l'export) */
+  --export-topbar-offset-x: 0px;
+  --export-topbar-offset-y: 0px;
+}
+
+/* agrandir et accentuer le label "Règles" dans la zone rules */
+.rules > .small {
+  font-size: 20px;      /* ajuste selon ton goût */
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+
+  /* couleurs */
+  --default-tag-color:#ffffff;
+  --roulette-default:#ffd400;
+  --special-default:#ff3b3b;
+
+  /* POSITIONS (modifiable en px) */
+  --topbar-left: 600px;
+  --topbar-top: 8px;
+  --grid-left: 45px;
+  --grid-top: 200px;
+  --rules-left: 128px;
+  --rules-top: 640px;
+}
+
+/* base */
+*{box-sizing:border-box}
+html,body{
+  height:100%;margin:0;
+  background:#000;
+  font-family:Inter,system-ui,Arial;
+  color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  padding:12px;
+}
+.canvas-wrapper {
+  position: relative;
+  width: var(--canvas-w);
+  height: var(--canvas-h);
+  transform-origin: top left;
+}
+.canvas{
+  width:var(--canvas-w);height:var(--canvas-h);
+  position:relative;
+  background-image:url('https://i.imgur.com/ceXEsYW.png');
+  background-size:contain;
+  background-repeat:no-repeat;
+  background-position:center;
+  background-color:#000;
+  border-radius:0;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);
+}
+
+/* topbar : positionnée via variables */
+.topbar{
+  z-index: 9999;
+  pointer-events: auto;
+  position: absolute;
+  left: var(--topbar-left);
+  top: var(--topbar-top);
+  width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+}
+.topbar-inner{
+  width: var(--grid-width);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-family: Cinzel, serif;
+  box-sizing: border-box;
+}
+.date-block{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+.date-block .label{ font-size: 12px; opacity: 0.9; }
+.date-block .value{
+  font-size: var(--font-day);
+  font-weight: 700;
+}
+
+/* action buttons */
+.btn-primary, .btn-ghost{
+  padding: 8px 12px;
+  border-radius: 0;
+  border: none;
+  cursor: pointer;
+  font-weight: 800;
+}
+.btn-primary{ background: #1f6feb; color: #fff; }
+.btn-ghost{ background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.4); }
+
+/* input date invisible but usable: force transparency to avoid native white rendering */
+.date-input{
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border: none;
+  background: transparent;
+  pointer-events: auto;
+  -webkit-appearance: none;
+  appearance: none;
+  color: transparent;          /* avoid native text showing */
+  caret-color: transparent;
+}
+
+/* force inner parts transparent for WebKit browsers */
+.date-input::-webkit-datetime-edit,
+.date-input::-webkit-datetime-edit-fields-wrapper,
+.date-input::-webkit-datetime-edit-text,
+.date-input::-webkit-datetime-edit-month-field,
+.date-input::-webkit-datetime-edit-day-field,
+.date-input::-webkit-datetime-edit-year-field {
+  color: transparent !important;
+  background: transparent !important;
+}
+
+.date-btn{
+  position: relative;
+  z-index: 2;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  font-size: var(--font-day);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* grid : position via variables */
+.grid-wrap{
+  position: absolute;
+  left: var(--grid-left);
+  top: var(--grid-top);
+  width: var(--grid-width);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.grid-header{
+  display: grid;
+  grid-template-columns: var(--time-col-w) repeat(6, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+.grid-header .time-col{
+  padding-left: 8px;
+  font-family: Cinzel, serif;
+  font-weight: 800;
+  font-size: var(--font-time);
+}
+.grid-header .day{
+  padding: 10px;
+  border-radius: 0;
+  text-align: center;
+  background: rgba(0,0,0,0.55);
+  font-family: Cinzel, serif;
+  font-weight: 800;
+  font-size: var(--font-day);
+}
+.grid{
+  display: grid;
+  grid-template-columns: var(--time-col-w) repeat(6, 1fr);
+  grid-auto-rows: var(--slot-h);
+  gap: var(--slot-gap);
+}
+.time-cell{
+  display: flex;
+  align-items: center;
+  padding-left: 80px;
+  font-family: Cinzel, serif;
+  font-weight: 900;
+  font-size: var(--font-time);
+}
+.slot{
+  position: relative;
+  background: rgba(0,0,0,0.55);
+  border: var(--border-w) solid rgba(255,255,255,0.06);
+  border-radius: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  overflow: hidden;
+  cursor: pointer;
+}
+.slot.empty{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cfcfcf;
+  font-weight: 800;
+}
+.slot .content{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  align-items: center;
+}
+.activity-name{
+  font-family:Cinzel,serif;font-weight:900;font-size:var(--font-activity);
+  text-align:center;word-break:break-word;color:#fff;
+}
+.tag {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: Cinzel, serif;
+  font-weight: 900;
+  font-size: var(--font-tag);
+  white-space: nowrap;
+  color: var(--default-tag-color);
+  background: transparent;
+  pointer-events: none;
+  text-align: center;
+}
+
+/* gear */
+.gear{
+  position:absolute;right:10px;top:10px;
+  width:30px;height:30px;border-radius:0;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.6);
+  opacity:0;transition:opacity .12s;
+  cursor:pointer;font-size:16px;
+}
+.slot:hover .gear{opacity:1}
+
+/* rules : position via variables */
+.rules{
+  position:absolute;
+  left: var(--rules-left);
+  top: var(--rules-top);
+  width:var(--grid-width);
+  padding:12px;border-radius:0;
+  background:rgba(0,0,0,0.7);
+  font-family:Cinzel,serif;font-size:var(--rules-font);
+  display:none;flex-direction:column;gap:8px;
+}
+.rules .rule-line{
+  padding:10px;border-radius:0;
+  background:rgba(255,255,255,0.02);
+}
+
+/* modal */
+.modal-back{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.6);
+  display:none;align-items:center;justify-content:center;
+  z-index:200;
+}
+.modal{
+  width:820px;background:#050a10;border-radius:0;
+  padding:16px;color:#fff;
+  box-shadow:0 12px 40px rgba(0,0,0,0.6);
+  font-family:Inter,system-ui;
+}
+.modal h3{font-family:Cinzel,serif;margin:0 0 8px 0}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.section-title{font-weight:800;font-family:Cinzel,serif;margin-bottom:6px}
+.select,input[type="text"],input[type="color"],textarea{
+  width:100%;padding:10px;border-radius:0;
+  border:1px solid rgba(255,255,255,0.2);
+  background:#050a10;color:#fff;
+}
+.activity-list{
+  max-height:260px;overflow:auto;border-radius:0;
+  padding:6px;background:#020408;
+  border:1px solid rgba(255,255,255,0.15);
+}
+.activity-item{
+  padding:8px;border-radius:0;
+  display:flex;justify-content:space-between;align-items:center;
+  cursor:pointer;
+}
+.activity-item:hover{background:rgba(255,255,255,0.06)}
+.color-palette{display:flex;gap:8px;align-items:center}
+.color-swatch{
+  width:34px;height:34px;border-radius:0;
+  border:2px solid rgba(255,255,255,0.4);
+  cursor:pointer;
+}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:100px}
+
+/* slider styles */
+#mainFontSizeRange, #specialFontSizeRange { width:100%; accent-color:#1f6feb; }
+#mainFontSizeValue, #specialFontSizeValue { opacity:0.9; }
+
+/* hide UI during capture (n'affecte pas la topbar hors du canvas) */
+.canvas.capture .gear,
+.canvas.capture .modal-back,
+.canvas.capture .btn-primary,
+.canvas.capture .btn-ghost { display:none !important; }
+
+.small{font-size:13px;opacity:0.9}
+
+/* responsive safety */
+@media (max-width: 1100px) {
+  :root { --font-day: 32px; --font-time: 28px; }
+  .canvas-wrapper { transform: scale(0.9); }
+}
+</style>
+</head>
+<body>
+
+  <!-- TOPBAR (placée en dehors du canvas pour ne pas être scalée) -->
+  <div class="topbar" id="topbar" role="banner" aria-label="Barre supérieure">
+    <div class="topbar-inner">
+      <div class="date-block">
+        <div class="label small">Début</div>
+        <button class="value date-btn" id="displayStart" data-type="start" aria-haspopup="dialog">—</button>
+        <input type="date" id="inputStart" class="date-input" />
+      </div>
+      <div class="date-block">
+        <div class="label small">Fin</div>
+        <button class="value date-btn" id="displayEnd" data-type="end" aria-haspopup="dialog">—</button>
+        <input type="date" id="inputEnd" class="date-input" />
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button id="exportPng" class="btn-primary">Exporter PNG</button>
+        <button id="resetBtn" class="btn-ghost">Réinitialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- wrapper qui sera scalée -->
+  <div class="canvas-wrapper" id="canvasWrapper">
+    <div class="canvas" id="canvas">
+
+      <!-- GRID -->
+      <div class="grid-wrap" id="gridWrap">
+        <div class="grid-header">
+          <div class="time-col"></div>
+          <div class="day">Lundi</div>
+          <div class="day">Mardi</div>
+          <div class="day">Mercredi</div>
+          <div class="day">Jeudi</div>
+          <div class="day">Vendredi</div>
+          <div class="day">Samedi</div>
+        </div>
+
+        <div class="grid" id="grid">
+          <!-- 15H -->
+          <div class="time-cell">15H</div>
+          <div class="slot empty" data-day="1" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+          <div class="slot empty" data-day="2" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+          <div class="slot empty" data-day="3" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+          <div class="slot empty" data-day="4" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+          <div class="slot empty" data-day="5" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+          <div class="slot empty" data-day="6" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+
+          <!-- 21H -->
+          <div class="time-cell">21H</div>
+          <div class="slot empty" data-day="1" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+          <div class="slot empty" data-day="2" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+          <div class="slot empty" data-day="3" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+          <div class="slot empty" data-day="4" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+          <div class="slot empty" data-day="5" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+          <div class="slot empty" data-day="6" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
+        </div>
+      </div>
+
+      <!-- RULES -->
+      <div class="rules" id="rulesArea">
+        <div class="small">Règles :</div>
+        <div id="rulesContent"></div>
+      </div>
+
+    </div>
+  </div>
+
+<!-- MODAL (léger, conserve sliders pour tailles si besoin) -->
+<div class="modal-back" id="modalBack">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3>Éditer la case</h3>
+    <div class="modal-grid">
+      <!-- gauche -->
+      <div>
+        <div class="section-title">Activité principale</div>
+        <div class="small">Catégorie</div>
+        <select id="categorySelect" class="select">
+          <option value="raid">Raid</option>
+          <option value="donjon">Donjon</option>
+          <option value="custom">Personnalisée</option>
+          <option value="libre">Activité libre</option>
+        </select>
+
+        <div style="height:8px"></div>
+        <div class="small">Liste / Nom</div>
+        <div id="activityList" class="activity-list"></div>
+
+        <div style="height:8px"></div>
+        <div id="mainFontSizeWrap">
+          <div class="small">Taille du texte (activité principale)</div>
+          <input type="range" id="mainFontSizeRange" min="12" max="48" value="28" />
+          <div id="mainFontSizeValue" class="small" style="margin-top:6px">28px</div>
+        </div>
+
+        <div style="height:8px"></div>
+        <div class="small">Couleur du nom</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <div class="color-palette" id="namePalette"></div>
+          <input type="color" id="nameColorPicker" value="#ffffff" />
+        </div>
+      </div>
+
+      <!-- droite -->
+      <div>
+        <div class="section-title">Activité spéciale</div>
+        <div class="small">Type</div>
+        <select id="specialSelect" class="select">
+          <option value="none">Aucune</option>
+          <option value="roulette">Roulette</option>
+          <option value="special">Soirée spéciale</option>
+          <option value="custom">Personnalisée</option>
+        </select>
+
+        <div style="height:8px"></div>
+        <div class="small">Tag / Nom spécial</div>
+        <input type="text" id="specialName" placeholder="Nom du tag (si personnalisé)" style="display:none" />
+
+        <div style="height:8px"></div>
+        <div id="specialFontSizeWrap">
+          <div class="small">Taille du tag (activité spéciale)</div>
+          <input type="range" id="specialFontSizeRange" min="10" max="36" value="20" />
+          <div id="specialFontSizeValue" class="small" style="margin-top:6px">20px</div>
+        </div>
+
+        <div style="height:8px"></div>
+        <div class="small">Règles (modifiable)</div>
+        <textarea id="specialRules" rows="5" placeholder="Texte des règles..."></textarea>
+
+        <div style="height:8px"></div>
+        <div class="small">Couleur du tag & cadre</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <div class="color-palette" id="tagPalette"></div>
+          <input type="color" id="tagColorPicker" value="#ffd400" />
+        </div>
+        <div style="height:6px"></div>
+        <input type="text" id="tagHex" placeholder="#rrggbb" />
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cancelBtn">Annuler</button>
+      <button class="btn-primary" id="saveBtn">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+/* DOM refs */
+const root = document.documentElement;
+const canvas = document.getElementById('canvas');
+const canvasWrapper = document.getElementById('canvasWrapper');
+const topbar = document.getElementById('topbar');
+const gridWrap = document.getElementById('gridWrap');
+const rulesArea = document.getElementById('rulesArea');
+const rulesContent = document.getElementById('rulesContent');
+const displayStart = document.getElementById('displayStart');
+const displayEnd = document.getElementById('displayEnd');
+const inputStart = document.getElementById('inputStart');
+const inputEnd = document.getElementById('inputEnd');
+const modalBack = document.getElementById('modalBack');
+const activityList = document.getElementById('activityList');
+const categorySelect = document.getElementById('categorySelect');
+const namePalette = document.getElementById('namePalette');
+const nameColorPicker = document.getElementById('nameColorPicker');
+const specialSelect = document.getElementById('specialSelect');
+const specialName = document.getElementById('specialName');
+const specialRules = document.getElementById('specialRules');
+const tagPalette = document.getElementById('tagPalette');
+const tagColorPicker = document.getElementById('tagColorPicker');
+const tagHex = document.getElementById('tagHex');
+const saveBtn = document.getElementById('saveBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const exportPng = document.getElementById('exportPng');
+const resetBtn = document.getElementById('resetBtn');
+
+const mainFontSizeRange = document.getElementById('mainFontSizeRange');
+const mainFontSizeValue = document.getElementById('mainFontSizeValue');
+const specialFontSizeRange = document.getElementById('specialFontSizeRange');
+const specialFontSizeValue = document.getElementById('specialFontSizeValue');
+
+/* small data sets (kept same as before) */
+const RAID = [
+  {name:"Désert Perpétuel", color:"#7B1FA2"},
+  {name:"Serment du Disciple", color:"#2E003E"},
+  {name:"Origine des Cauchemars", color:"#B00020"},
+  {name:"Jardin du Salut", color:"#2ECC71"},
+  {name:"Dernier Vœu", color:"#8E44AD"},
+  {name:"Crypte de la Pierre", color:"#5DADE2"},
+  {name:"Chute de Cropta", color:"#1ABC9C"},
+  {name:"Chute du Roi", color:"#d378b2"},
+  {name:"Caveau de Verre", color:"#1F8EFA"}
+].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
+
+const DONJON = [
+  {name:"Équilibre", color:"#BDC3C7"},
+  {name:"Ruine de la Guerrière", color:"#922B21"},
+  {name:"Fantôme des Profondeurs", color:"#154360"},
+  {name:"Flèche de la Vigie", color:"#F1C40F"},
+  {name:"Trône Brisé", color:"#6C3483"},
+  {name:"Hôte Vesper", color:"#2E86C1"},
+  {name:"Dualité", color:"#C0392B"},
+  {name:"Fosse de l’Hérésie", color:"#145A32"},
+  {name:"Étreinte de l’Avarice", color:"#F4D03F"},
+  {name:"Prophétie", color:"#2C2C54"}
+].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
+
+/* PRESET_SIZES — tailles de police (px) par activité (déclaré globalement) */
+window.PRESET_SIZES = {
+  "Désert Perpétuel": 20,
+  "Serment du Disciple": 20,
+  "Origine des Cauchemars": 20,
+  "Jardin du Salut": 20,
+  "Dernier Vœu": 20,
+  "Crypte de la Pierre": 20,
+  "Chute de Cropta": 20,
+  "Chute du Roi": 20,
+  "Caveau de Verre": 20,
+
+  "Équilibre": 20,
+  "Ruine de la Guerrière": 20,
+  "Fantôme des Profondeurs": 1,
+  "Flèche de la Vigie": 20,
+  "Trône Brisé": 20,
+  "Hôte Vesper": 20,
+  "Dualité": 20,
+  "Fosse de l’Hérésie": 20,
+  "Étreinte de l’Avarice": 20,
+  "Prophétie": 20,
+
+  "Activité libre": 20,
+  "Personnalisée": 20
+};
+
+/* state */
+let state = {};
+let currentKey = null;
+let currentSelectedActivity = null;
+
+/* helper: open native date picker reliably */
+function openDatePicker(input){
+  if (!input) return;
+  if (typeof input.showPicker === 'function') {
+    try { input.showPicker(); return; } catch(e){ /* fallback */ }
+  }
+  input.focus();
+  setTimeout(()=> { try { input.click(); } catch(e){} }, 10);
+}
+displayStart.addEventListener('click', ()=> openDatePicker(inputStart));
+displayEnd.addEventListener('click', ()=> openDatePicker(inputEnd));
+
+/* format short date */
+function formatShortDate(d){
+  if(!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});
+}
+
+/* init dates */
+(function initDates(){
+  const today = new Date();
+  const day = today.getDay();
+  const diffToMonday = (day === 0) ? -6 : (1 - day);
+  const start = new Date(today); start.setDate(today.getDate() + diffToMonday);
+  const end = new Date(start); end.setDate(start.getDate() + 5);
+  inputStart.value = start.toISOString().slice(0,10);
+  inputEnd.value = end.toISOString().slice(0,10);
+  displayStart.textContent = formatShortDate(inputStart.value);
+  displayEnd.textContent = formatShortDate(inputEnd.value);
+})();
+
+/* palettes */
+const QUICK_COLORS = ['#ffd400','#ff3b3b','#00c853','#1e88e5','#9c27b0'];
+function buildPalettes(){
+  QUICK_COLORS.forEach(c=>{
+    const s1 = document.createElement('div'); s1.className='color-swatch'; s1.style.background=c;
+    s1.addEventListener('click', ()=> nameColorPicker.value = c);
+    namePalette.appendChild(s1);
+    const s2 = document.createElement('div'); s2.className='color-swatch'; s2.style.background=c;
+    s2.addEventListener('click', ()=> { tagColorPicker.value = c; tagHex.value = c; });
+    tagPalette.appendChild(s2);
+  });
+}
+buildPalettes();
+
+/* ---------- RENDER ACTIVITY LIST + MODAL HANDLERS (MODIFIÉ) ---------- */
+
+/* render activity list */
+function renderActivityList(){
+  if(!activityList) return;
+  activityList.innerHTML = '';
+
+  const cat = categorySelect ? categorySelect.value : 'raid';
+  let list = [];
+
+  if(cat === 'raid') list = RAID;
+  else if(cat === 'donjon') list = DONJON;
+  else if(cat === 'libre'){
+    activityList.innerHTML = '<div class="activity-item">Aucune sélection nécessaire</div>';
+    currentSelectedActivity = { name:"Activité libre", color:"#ffffff", custom:false };
+    highlightSelected();
+    return;
+  }
+
+  if(cat === 'custom'){
+    const wrap = document.createElement('div');
+    wrap.className = 'activity-item';
+    wrap.textContent = 'Cliquer pour saisir une activité personnalisée';
+    wrap.style.cursor = 'pointer';
+    wrap.addEventListener('click', ()=>{
+      const name = prompt("Nom de l'activité personnalisée :","Nouvelle activité") || "Activité personnalisée";
+      currentSelectedActivity = { name, color: nameColorPicker ? nameColorPicker.value : '#ffffff', custom:true, preferredFontSize: PRESET_SIZES[name] || 28 };
+      highlightSelected();
+    });
+    activityList.appendChild(wrap);
+    highlightSelected();
+    return;
+  }
+
+  // build list items with data-name for reliable matching
+  list.forEach(a=>{
+    const it = document.createElement('div');
+    it.className = 'activity-item';
+    it.setAttribute('data-name', a.name);
+    it.innerHTML = `<div class="activity-item-name" style="display:inline-block;vertical-align:middle">${escapeHtml(a.name)}</div>
+                    <div style="display:inline-block;float:right;width:18px;height:18px;background:${a.color};border-radius:2px;margin-left:8px;"></div>`;
+    it.style.padding = '8px 10px';
+    it.style.cursor = 'pointer';
+    it.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+    it.style.color = '#cfcfcf';
+    it.style.userSelect = 'none';
+
+    it.addEventListener('click', ()=>{
+      currentSelectedActivity = {
+        name: a.name,
+        color: a.color,
+        preferredFontSize: PRESET_SIZES[a.name] || 28,
+        custom: false
+      };
+      if(nameColorPicker) nameColorPicker.value = a.color;
+      highlightSelected();
+    });
+
+    activityList.appendChild(it);
+  });
+
+  // auto-select first if nothing selected
+  setTimeout(()=>{
+    if(!currentSelectedActivity && activityList.firstChild && activityList.firstChild.getAttribute('data-name')){
+      activityList.firstChild.click();
+    } else {
+      highlightSelected();
+    }
+  }, 0);
+}
+
+/* highlight selected item in the list */
+function highlightSelected(){
+  if(!activityList) return;
+  Array.from(activityList.children).forEach(ch=>{
+    ch.classList.remove('selected');
+    ch.style.background = '';
+    ch.style.color = '#cfcfcf';
+  });
+  if(!currentSelectedActivity) return;
+  const name = currentSelectedActivity.name;
+  const match = Array.from(activityList.children).find(it => it.getAttribute('data-name') === name);
+  if(match){
+    match.classList.add('selected');
+    match.style.background = 'rgba(255,255,255,0.08)';
+    match.style.color = '#fff';
+  } else {
+    // handle custom / libre items which may not have data-name
+    const textMatch = Array.from(activityList.children).find(it => it.textContent.trim().startsWith(name));
+    if(textMatch){
+      textMatch.classList.add('selected');
+      textMatch.style.background = 'rgba(255,255,255,0.08)';
+      textMatch.style.color = '#fff';
+    }
+  }
+}
+
+/* open modal for a given key */
+function openModalForKey(key){
+  currentKey = key;
+  const s = state[key] || {};
+  // reset modal fields to defaults
+  if(categorySelect) categorySelect.value = 'raid';
+  if(specialSelect) specialSelect.value = 'none';
+  if(specialName) { specialName.style.display = 'none'; specialName.value = ''; }
+  if(specialRules) specialRules.value = '';
+  if(nameColorPicker) nameColorPicker.value = '#ffffff';
+  if(tagColorPicker) tagColorPicker.value = '#ffd400';
+  if(tagHex) tagHex.value = '#ffd400';
+  currentSelectedActivity = null;
+
+  // prefill from state if present
+  if(s.activity){
+    const inRaid = RAID.find(r=>r.name === s.activity.name);
+    const inDonjon = DONJON.find(d=>d.name === s.activity.name);
+    if(inRaid) categorySelect.value = 'raid';
+    else if(inDonjon) categorySelect.value = 'donjon';
+    else categorySelect.value = 'custom';
+    currentSelectedActivity = {...s.activity};
+    if(nameColorPicker) nameColorPicker.value = s.activity.color || '#ffffff';
+  }
+
+  if(s.special){
+    specialSelect.value = s.special.type || 'none';
+    if(s.special.type === 'custom'){ specialName.style.display='block'; specialName.value = s.special.name || ''; }
+    specialRules.value = s.special.rules || '';
+    tagColorPicker.value = s.special.color || '#ffd400';
+    tagHex.value = s.special.color || '#ffd400';
+  }
+
+  // prefill font sizes if present
+  if(mainFontSizeRange) mainFontSizeRange.value = (s.activity && s.activity.preferredFontSize) ? s.activity.preferredFontSize : 28;
+  if(mainFontSizeValue) mainFontSizeValue.textContent = mainFontSizeRange.value + 'px';
+  if(specialFontSizeRange) specialFontSizeRange.value = (s.special && s.special.preferredFontSize) ? s.special.preferredFontSize : 20;
+  if(specialFontSizeValue) specialFontSizeValue.textContent = specialFontSizeRange.value + 'px';
+
+  // render list and highlight selection
+  renderActivityList();
+  highlightSelected();
+
+  // show modal overlay
+  if(modalBack) modalBack.style.display = 'flex';
+}
+
+/* ensure slot clicks open modal (keeps existing behavior) */
+document.querySelectorAll('.slot').forEach(slot=>{
+  slot.addEventListener('click', ()=>{
+    const key = slot.dataset.day + '-' + slot.dataset.hour;
+    openModalForKey(key);
+  });
+});
+
+/* modal events: when category changes, reset selection then render */
+if(categorySelect){
+  categorySelect.addEventListener('change', ()=>{
+    currentSelectedActivity = null;
+    renderActivityList();
+  });
+}
+
+/* special select handling (kept as before) */
+if(specialSelect){
+  specialSelect.addEventListener('change', (e)=>{
+    const v = e.target.value;
+    if(v === 'custom'){ specialName.style.display = 'block'; specialName.focus(); }
+    else { specialName.style.display = 'none'; specialName.value = ''; }
+    if(v === 'roulette'){
+      tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--roulette-default').trim() || '#ffd400';
+      tagHex.value = tagColorPicker.value;
+      specialRules.value = DEFAULT_RULES.roulette;
+    }
+    if(v === 'special'){
+      tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--special-default').trim() || '#ff3b3b';
+      tagHex.value = tagColorPicker.value;
+      specialRules.value = DEFAULT_RULES.special;
+    }
+    if(v === 'none'){ specialRules.value = ''; }
+  });
+}
+
+/* color inputs sync */
+if(tagColorPicker) tagColorPicker.addEventListener('input', ()=> tagHex.value = tagColorPicker.value);
+if(tagHex) tagHex.addEventListener('input', ()=> { const v = tagHex.value.trim(); if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) tagColorPicker.value = v; });
+
+/* font size preview */
+if(mainFontSizeRange) mainFontSizeRange.addEventListener('input', ()=> mainFontSizeValue.textContent = mainFontSizeRange.value + 'px');
+if(specialFontSizeRange) specialFontSizeRange.addEventListener('input', ()=> specialFontSizeValue.textContent = specialFontSizeRange.value + 'px');
+
+/* default rules */
+const DEFAULT_RULES = {
+  roulette: "Chaque joueur aura droit à 3 tirage ce qui déterminera l'arme qu'il devra garder tout le long du raid. Les tirages ne sont pas rétroactifs alors choisissez bien.",
+  special: "Composition d'une majorité de joueurs expérimentés, afin de prendre le temps pour l'apprentissage d'activités considérées difficiles."
+};
+
+/* save */
+saveBtn.addEventListener('click', ()=>{
+  if(!currentKey) return;
+
+  // activité principale
+  let activity = null;
+  if(categorySelect.value === 'custom'){
+    if(currentSelectedActivity && currentSelectedActivity.custom) {
+      activity = {...currentSelectedActivity, color: nameColorPicker.value};
+    } else {
+      const name = prompt("Nom de l'activité personnalisée :","Activité") || "Activité";
+      activity = { name, color: nameColorPicker.value, custom: true };
+    }
+  } else {
+    if(currentSelectedActivity) {
+      activity = {...currentSelectedActivity, color: nameColorPicker.value};
+    } else {
+      const list = categorySelect.value === 'raid' ? RAID : DONJON;
+      const first = list[0];
+      activity = { name: first.name, color: first.color };
+    }
+  }
+
+  if(activity){
+    // priorité : valeur choisie dans le modal > currentSelectedActivity.preferredFontSize > PRESET_SIZES > 28
+    const modalMainSize = (typeof mainFontSizeRange !== 'undefined' && mainFontSizeRange.value) ? parseInt(mainFontSizeRange.value,10) : null;
+    activity.preferredFontSize = modalMainSize || (currentSelectedActivity && currentSelectedActivity.preferredFontSize) || PRESET_SIZES[activity.name] || 28;
+  }
+
+  // activité spéciale
+  const type = specialSelect.value;
+  let special = null;
+  if(type !== 'none'){
+    const name = type === 'custom' ? (specialName.value.trim() || 'Personnalisée') : (type === 'roulette' ? 'Roulette' : 'Soirée spéciale');
+    let rules = (specialRules && specialRules.value) ? specialRules.value.trim() : '';
+    if (!rules) {
+      if (type === 'roulette') rules = DEFAULT_RULES.roulette;
+      else if (type === 'special') rules = DEFAULT_RULES.special;
+      else rules = "";
+    }
+
+    // couleur et taille du tag spécial
+    const tagColor = (tagColorPicker && tagColorPicker.value) ? tagColorPicker.value : '#ffffff';
+    const modalSpecialSize = (typeof specialFontSizeRange !== 'undefined' && specialFontSizeRange.value) ? parseInt(specialFontSizeRange.value,10) : null;
+    const presetSpecialSize = PRESET_SIZES[name] || 20;
+
+    special = {
+      name,
+      color: tagColor,
+      rules,
+      preferredFontSize: modalSpecialSize || presetSpecialSize
+    };
+  }
+
+  // écrire dans l'état
+  state[currentKey] = {
+    activity: activity,
+    special: special
+  };
+
+  // fermer modal et rafraîchir
+  closeModal();
+  if (typeof refreshGrid === 'function') refreshGrid();
+
+  currentKey = null;
+  currentSelectedActivity = null;
+});
+
+/* cancel */
+cancelBtn.addEventListener('click', ()=>{ closeModal(); });
+
+/* closeModal implementation */
+function closeModal(){
+  if(modalBack) modalBack.style.display = 'none';
+  // reset selection highlight inside modal
+  Array.from(activityList.children || []).forEach(ch=>{
+    ch.classList.remove('selected');
+    ch.style.background = '';
+    ch.style.color = '#cfcfcf';
+  });
+  currentSelectedActivity = null;
+}
+
+/* escape html util */
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/* refresh grid (simple, applies preferred sizes but keeps layout stable) */
+function refreshGrid(){
+  document.querySelectorAll('.slot').forEach(slot=>{
+    const key = slot.dataset.day + '-' + slot.dataset.hour;
+    const s = state[key];
+    const nameEl = slot.querySelector('.activity-name');
+    const content = slot.querySelector('.content');
+    const existingTag = slot.querySelector('.tag');
+    if(existingTag) existingTag.remove();
+
+    const borderW = getComputedStyle(document.documentElement).getPropertyValue('--border-w').trim() || '3px';
+
+    if(s && s.activity){
+      slot.classList.remove('empty');
+      nameEl.textContent = s.activity.name;
+      nameEl.style.color = s.activity.color || '#ffffff';
+      // apply preferred font size if present
+      if (s.activity.preferredFontSize) nameEl.style.fontSize = s.activity.preferredFontSize + 'px';
+      else nameEl.style.fontSize = getComputedStyle(document.documentElement).getPropertyValue('--font-activity') || '28px';
+
+      slot.style.border = `${borderW} solid rgba(255,255,255,0.4)`;
+
+      if(s.special){
+        const borderColor = s.special.color || '#ffffff';
+        slot.style.border = `${borderW} solid ${borderColor}`;
+
+        const t = document.createElement('div');
+        t.className = 'tag';
+        t.textContent = s.special.name;
+        t.style.color = borderColor;
+        t.style.fontFamily = 'Cinzel, serif';
+        t.style.background = 'transparent';
+        // allow wrapping for long tags
+        t.style.left = '12px';
+        t.style.right = '12px';
+        t.style.transform = 'none';
+        t.style.textAlign = 'center';
+        t.style.whiteSpace = 'normal';
+        t.style.wordBreak = 'break-word';
+        t.style.bottom = '12px';
+        if (s.special.preferredFontSize) t.style.fontSize = s.special.preferredFontSize + 'px';
+        else t.style.fontSize = getComputedStyle(document.documentElement).getPropertyValue('--font-tag') || '20px';
+        content.appendChild(t);
+      }
+    }else{
+      slot.classList.add('empty');
+      nameEl.textContent = 'Vide';
+      nameEl.style.color = '#ddd';
+      nameEl.style.fontSize = getComputedStyle(document.documentElement).getPropertyValue('--font-activity') || '28px';
+      slot.style.border = `${borderW} solid rgba(255,255,255,0.2)`;
+    }
+  });
+  updateRules();
+}
+
+/* rules */
+function updateRules(){
+  const keys = Object.keys(state);
+  const rouletteKey = keys.find(k => state[k]?.special?.type === 'roulette');
+  const specialKey  = keys.find(k => state[k]?.special?.type === 'special');
+  const customKey   = keys.find(k => state[k]?.special?.type === 'custom');
+  const lines = [];
+  if(rouletteKey){ const s = state[rouletteKey].special; lines.push({ title:'Roulette', text:s.rules || DEFAULT_RULES.roulette, color:s.color || '#ffd400' }); }
+  if(specialKey){ const s = state[specialKey].special; lines.push({ title:'Soirée spéciale', text:s.rules || DEFAULT_RULES.special, color:s.color || '#ff3b3b' }); }
+  if(customKey){ const s = state[customKey].special; lines.push({ title: s.name || 'Personnalisée', text: s.rules || '', color: s.color || '#ffffff' }); }
+  if(!lines.length){ rulesArea.style.display='none'; rulesContent.innerHTML=''; } else { rulesArea.style.display='flex'; rulesContent.innerHTML = lines.map(l=>`<div class="rule-line" style="color:${l.color}"><strong>${l.title} :</strong> ${l.text}</div>`).join(''); }
+}
+
+/* reset */
+resetBtn.addEventListener('click', ()=>{ if(!confirm('Réinitialiser toutes les cases ?')) return; state = {}; refreshGrid(); });
+
+/* export PNG: ensure dates visible and fonts loaded, inject dates into canvas for capture */
+exportPng.addEventListener('click', async () => {
+  try {
+    // Masquer UI non désirée
+    canvas.classList.add('capture');
+    modalBack.style.display = 'none';
+    await new Promise(r => setTimeout(r, 120));
+
+    // attendre que les polices soient prêtes
+    if (document.fonts && typeof document.fonts.ready !== 'undefined') {
+      await document.fonts.ready;
+    }
+
+    // calculer position des boutons de date par rapport au canvas
+    // on récupère bounding rects et on convertit en coordonnées locales du canvas
+    const canvasRect = canvas.getBoundingClientRect();
+    const startRect = displayStart.getBoundingClientRect();
+    const endRect = displayEnd.getBoundingClientRect();
+
+    // position relative au canvas (en px)
+    const startLeft = startRect.left - canvasRect.left;
+    const startTop  = startRect.top  - canvasRect.top;
+    const endLeft   = endRect.left   - canvasRect.left;
+    const endTop    = endRect.top    - canvasRect.top;
+
+    // créer conteneur temporaire dans le canvas
+    const tmpDates = document.createElement('div');
+    tmpDates.className = 'export-dates-temp';
+    tmpDates.style.position = 'absolute';
+    tmpDates.style.pointerEvents = 'none';
+    tmpDates.style.zIndex = 9999;
+    tmpDates.style.background = 'transparent';
+
+    // créer éléments de date avec position absolue individuelle
+    const startEl = document.createElement('div');
+    startEl.className = 'export-date export-start';
+    startEl.textContent = displayStart.textContent || '—';
+    Object.assign(startEl.style, {
+      position: 'absolute',
+      left: (startLeft) + 'px',
+      top:  (startTop)  + 'px',
+      color: '#ffffff',
+      background: 'transparent',
+      fontFamily: '"Cinzel", serif',
+      fontWeight: '700',
+      fontSize: getComputedStyle(document.documentElement).getPropertyValue('--font-day') || '40px',
+      lineHeight: '1',
+      textShadow: '0 1px 0 rgba(0,0,0,0.6)',
+      transform: 'none',
+      whiteSpace: 'nowrap'
+    });
+
+    const endEl = document.createElement('div');
+    endEl.className = 'export-date export-end';
+    endEl.textContent = displayEnd.textContent || '—';
+    Object.assign(endEl.style, {
+      position: 'absolute',
+      left: (endLeft) + 'px',
+      top:  (endTop)  + 'px',
+      color: '#ffffff',
+      background: 'transparent',
+      fontFamily: '"Cinzel", serif',
+      fontWeight: '700',
+      fontSize: getComputedStyle(document.documentElement).getPropertyValue('--font-day') || '40px',
+      lineHeight: '1',
+      textShadow: '0 1px 0 rgba(0,0,0,0.6)',
+      transform: 'none',
+      whiteSpace: 'nowrap'
+    });
+
+    tmpDates.appendChild(startEl);
+    tmpDates.appendChild(endEl);
+
+    // injecter dans le canvas
+    canvas.appendChild(tmpDates);
+
+    // sauvegarder et retirer les transforms pour capture propre
+    const prevWrapperTransform = canvasWrapper ? canvasWrapper.style.transform : '';
+    const prevWrapperOrigin = canvasWrapper ? canvasWrapper.style.transformOrigin : '';
+    const prevCanvasTransform = canvas.style.transform;
+    const prevCanvasOrigin = canvas.style.transformOrigin;
+
+    if (canvasWrapper) {
+      canvasWrapper.style.transform = 'none';
+      canvasWrapper.style.transformOrigin = 'top left';
+    }
+    canvas.style.transform = 'none';
+    canvas.style.transformOrigin = 'top left';
+
+    // capture
+    const img = await html2canvas(canvas, { scale: 2, useCORS: true, backgroundColor: null });
+
+    // restaurer transforms
+    if (canvasWrapper) {
+      canvasWrapper.style.transform = prevWrapperTransform;
+      canvasWrapper.style.transformOrigin = prevWrapperOrigin;
+    }
+    canvas.style.transform = prevCanvasTransform;
+    canvas.style.transformOrigin = prevCanvasOrigin;
+
+    // cleanup
+    tmpDates.remove();
+
+    // nom de fichier
+    function safeDateForFilename(inputValue, displayText) {
+      if (inputValue) {
+        const parts = inputValue.split('-');
+        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      return displayText.replace(/\s+/g, '_').replace(/[\/\\:]/g, '-');
+    }
+    const startSafe = safeDateForFilename(inputStart.value, displayStart.textContent);
+    const endSafe = safeDateForFilename(inputEnd.value, displayEnd.textContent);
+    const filename = `planning-${startSafe}_${endSafe}.png`;
+
+    // download
+    const a = document.createElement('a');
+    a.href = img.toDataURL('image/png');
+    a.download = filename;
+    a.click();
+
+  } catch (err) {
+    alert('Erreur PNG : ' + (err && err.message ? err.message : err));
+  } finally {
+    canvas.classList.remove('capture');
+    modalBack.style.display = 'none';
+  }
+});
+
+/* date pickers fallback */
+inputStart.addEventListener('change', (e)=> { displayStart.textContent = formatShortDate(e.target.value); });
+inputEnd.addEventListener('change', (e)=> { displayEnd.textContent = formatShortDate(e.target.value); });
+
+/* init */
+(function init(){
+  renderActivityList();
+  refreshGrid();
+  function applyScale(){
+    const canvasW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-w')) || 1536;
+    const canvasH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-h')) || 1024;
+    const scaleX = (window.innerWidth - 40) / canvasW;
+    const scaleY = (window.innerHeight - 40) / canvasH;
+    const scale = Math.min(scaleX, scaleY, 1);
+    if (canvasWrapper) {
+      canvasWrapper.style.transform = 'scale(' + scale + ')';
+      canvasWrapper.style.transformOrigin = 'top left';
+    } else {
+      canvas.style.transform = 'scale(' + scale + ')';
+      canvas.style.transformOrigin = 'top left';
+    }
+  }
+  applyScale();
+  window.addEventListener('resize', applyScale);
+})();
+
+/* expose setLayout to change positions from console */
+window.setLayout = function(newLayout){
+  if(newLayout.topbar){
+    root.style.setProperty('--topbar-left', (newLayout.topbar.left ?? 540) + 'px');
+    root.style.setProperty('--topbar-top',  (newLayout.topbar.top  ?? 8) + 'px');
+    topbar.style.left = (newLayout.topbar.left ?? 540) + 'px';
+    topbar.style.top = (newLayout.topbar.top ?? 8) + 'px';
+  }
+  if(newLayout.grid){
+    root.style.setProperty('--grid-left', (newLayout.grid.left ?? 45) + 'px');
+    root.style.setProperty('--grid-top',  (newLayout.grid.top  ?? 200) + 'px');
+    gridWrap.style.left = (newLayout.grid.left ?? 45) + 'px';
+    gridWrap.style.top = (newLayout.grid.top ?? 200) + 'px';
+  }
+  if(newLayout.rules){
+    root.style.setProperty('--rules-left', (newLayout.rules.left ?? 128) + 'px');
+    root.style.setProperty('--rules-top',  (newLayout.rules.top  ?? 640) + 'px');
+    rulesArea.style.left = (newLayout.rules.left ?? 128) + 'px';
+    rulesArea.style.top = (newLayout.rules.top ?? 640) + 'px';
+  }
+};
+</script>
+</body>
+</html>
