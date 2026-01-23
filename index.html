@@ -14,10 +14,10 @@
    ========================= */
 :root{
   /* canvas / grid sizes */
-  --canvas-w:1536px;
+  --canvas-w:1700px;
   --canvas-h:1024px;
-  --grid-width:1280px;
-  --time-col-w:160px;
+  --grid-width:1450px;
+  --time-col-w:150px;
   --slot-h:160px;
   --slot-gap:12px;
   --border-w:3px;
@@ -27,10 +27,22 @@
   --font-time:36px;
   --font-activity:28px;
   --font-tag:24px;
+
+  /* taille du texte pour la zone Règles (modifiable) */
   --rules-font:20px;
 
-  /* --- nouvelle variable : taille du label "Règles :" (modifiable) --- */
-  --rules-label-font-size: 22px;
+  /* --- variable contrôlant la taille du label "Règles :" --- */
+  --rules-label-font-size: 18px;
+
+  /* contrôles de la boîte Règles (largeur, padding, hauteur max) */
+  --rules-width: 1440px;      /* largeur de la case Règles */
+  --rules-padding: 10px;     /* padding interne */
+  --rules-max-height: 220px; /* hauteur max avant scroll */
+
+  /* taille et offset pour les dates lors de l'export (modifiable) */
+  --export-dates-font-size: 48px; /* changer ici la taille des dates dans l'export */
+  --export-dates-offset-x: -10px;   /* décalage horizontal additionnel (px) */
+  --export-dates-offset-y: 0px;   /* décalage vertical additionnel (px) */
 
   /* couleurs */
   --default-tag-color:#ffffff;
@@ -41,8 +53,8 @@
   --topbar-left: 540px;    /* left du topbar (px) */
   --topbar-top: 8px;       /* top du topbar (px) */
   --grid-left: 45px;       /* left du grid-wrap (px) */
-  --grid-top: 200px;       /* top du grid-wrap (px) */
-  --rules-left: 128px;     /* left de la zone rules (px) */
+  --grid-top: 180px;       /* top du grid-wrap (px) */
+  --rules-left: 210px;     /* left de la zone rules (px) */
   --rules-top: 640px;      /* top de la zone rules (px) */
 
   /* offsets pour éléments individuels (translate) */
@@ -75,7 +87,7 @@ html,body{
 .canvas{
   width:var(--canvas-w);height:var(--canvas-h);
   position:relative;
-  background-image:url('https://i.imgur.com/ceXEsYW.png');
+  background-image:url('https://i.imgur.com/Slf8Flb.png');
   background-size:contain;
   background-repeat:no-repeat;
   background-position:center;
@@ -126,6 +138,7 @@ html,body{
   cursor: pointer;
   font-weight: 800;
 }
+/* Ces boutons utilisent des variables pour pouvoir les décaler indépendamment de la date */
 .btn-primary{ background: #1f6feb; color: #fff; transform: translate(var(--export-offset-x), var(--export-offset-y)); }
 .btn-ghost{ background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.4); transform: translate(var(--reset-offset-x), var(--reset-offset-y)); }
 
@@ -214,7 +227,7 @@ html,body{
   background: rgba(0,0,0,0.55);
   border: var(--border-w) solid rgba(255,255,255,0.06);
   border-radius: 0;
-  padding: 12px;
+  padding: 12px 12px 24px 12px; /* plus d'espace en bas pour le tag */
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -240,18 +253,32 @@ html,body{
   font-family:Cinzel,serif;font-weight:900;font-size:var(--font-activity);
   text-align:center;word-break:break-word;color:#fff;
 }
+
+/* tag (activité spéciale) :
+   - prend pratiquement toute la largeur disponible (left/right) pour éviter d'être trop étroit
+   - padding intérieur pour "respirer"
+   - autorise plusieurs lignes (jusqu'à ~4) et remonte vers le haut si nécessaire
+*/
 .tag {
   position: absolute;
-  bottom: 12px;        /* distance depuis le bas de la case */
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 1px;                   /* légèrement plus haut */
+  left: 12px;                     /* bord gauche du tag */
+  right: 12px;                    /* bord droit du tag -> largeur max = slot width - 24px */
   font-family: Cinzel, serif;
   font-weight: 900;
   font-size: var(--font-tag);
-  white-space: nowrap;
+  line-height: 1.05;
+  white-space: normal;            /* autorise retour à la ligne */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  text-align: center;
+  padding: 6px 1px;              /* respirer à l'intérieur du tag */
+  max-height: calc(var(--font-tag) * 4); /* autorise ~4 lignes */
   color: var(--default-tag-color);
   background: transparent;
   pointer-events: none;
+  box-sizing: border-box;
+  border-radius: 2px;
 }
 
 /* gear */
@@ -265,25 +292,41 @@ html,body{
 }
 .slot:hover .gear{opacity:1}
 
-/* rules : position via variables */
+/* rules : position via variables (pas de scroll, la boîte s'agrandit avec le contenu) */
 .rules{
-  position:absolute;
+  position: absolute;
   left: var(--rules-left);
   top: var(--rules-top);
-  width:var(--grid-width);
-  padding:12px;border-radius:0;
-  background:rgba(0,0,0,0.7);
-  font-family:Cinzel,serif;font-size:var(--rules-font);
-  display:none;flex-direction:column;gap:8px;
+  width: var(--rules-width);
+  padding: var(--rules-padding);
+  border-radius: 0;
+  background: rgba(0,0,0,0.7);
+  font-family: Cinzel, serif;
+  font-size: var(--rules-font);
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+
+  /* plus de limitation de hauteur ni de scroll : la boîte prendra la hauteur nécessaire */
+  max-height: none;
+  overflow: visible;
 }
+
 /* cible uniquement le label "Règles :" dans la zone .rules — taille contrôlable via la variable --rules-label-font-size */
 .rules > .small {
   font-size: var(--rules-label-font-size);
   font-weight: 800;
 }
+
+/* style des lignes */
 .rules .rule-line{
-  padding:10px;border-radius:0;
-  background:rgba(255,255,255,0.02);
+  padding: 8px;
+  border-radius: 0;
+  background: rgba(255,255,255,0.02);
+  font-size: inherit;
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 /* modal */
@@ -326,7 +369,12 @@ html,body{
 }
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:100px}
 
-/* hide UI during capture (n'affecte pas la topbar hors du canvas) */
+/* sliders */
+.slider-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.slider-row input[type="range"]{flex:1}
+.slider-value{min-width:44px;text-align:right;font-weight:700}
+
+/* hide UI during capture (on masque uniquement ce qu'on ne veut pas exporter) */
 .canvas.capture .gear,
 .canvas.capture .modal-back,
 .canvas.capture .btn-primary,
@@ -342,9 +390,6 @@ html,body{
 </style>
 </head>
 <body>
-<!-- (le reste du fichier peut suivre normalement) -->
-</body>
-</html>
 
   <!-- TOPBAR (placée en dehors du canvas pour ne pas être scalée) -->
   <div class="topbar" id="topbar" role="banner" aria-label="Barre supérieure">
@@ -457,6 +502,8 @@ html,body{
           <option value="none">Aucune</option>
           <option value="roulette">Roulette</option>
           <option value="special">Soirée spéciale</option>
+          <option value="decouverte">Découverte</option>
+          <option value="chill">CHILL</option>
           <option value="custom">Personnalisée</option>
         </select>
 
@@ -501,39 +548,39 @@ html,body{
 const layout = {
   topbar: { left: 540, top: 8 },
   grid:   { left: 45, top: 200 },
-  rules:  { left: 128, top: 640 },
+  rules:  { left: 130, top: 640 },
   offsets: {
     displayStart: { x: 0, y: 0 },
     displayEnd:   { x: 0, y: 0 },
-    export:       { x: 0, y: 0 },
-    reset:        { x: 0, y: 0 }
+    export:       { x: -200, y: 0 },
+    reset:        { x: -200, y: 0 }
   }
 };
 
-/* couleurs RAID / DONJON */
+/* couleurs RAID / DONJON et (optionnel) tailles par défaut pour une assignment rapide */
 const RAID_DATA = [
-  {name:"Désert Perpétuel", color:"#7B1FA2"},
-  {name:"Serment du Disciple", color:"#2E003E"},
-  {name:"Origine des Cauchemars", color:"#B00020"},
-  {name:"Jardin du Salut", color:"#2ECC71"},
-  {name:"Dernier Vœu", color:"#8E44AD"},
-  {name:"Crypte de la Pierre", color:"#5DADE2"},
-  {name:"Chute de Cropta", color:"#1ABC9C"},
-  {name:"Chute du Roi", color:"#d378b2"},
-  {name:"Caveau de Verre", color:"#1F8EFA"}
+  {name:"Désert Perpétuel", color:"#7B1FA2", defaultFont:{activity:30, tag:22}},
+  {name:"Serment du Disciple", color:"#2E003E", defaultFont:{activity:28, tag:20}},
+  {name:"Origine des Cauchemars", color:"#B00020", defaultFont:{activity:28, tag:20}},
+  {name:"Jardin du Salut", color:"#2ECC71", defaultFont:{activity:26, tag:20}},
+  {name:"Dernier Vœu", color:"#8E44AD", defaultFont:{activity:28, tag:20}},
+  {name:"Crypte de la Pierre", color:"#5DADE2", defaultFont:{activity:28, tag:20}},
+  {name:"Chute de Cropta", color:"#1ABC9C", defaultFont:{activity:26, tag:20}},
+  {name:"Chute du Roi", color:"#d378b2", defaultFont:{activity:26, tag:20}},
+  {name:"Caveau de Verre", color:"#1F8EFA", defaultFont:{activity:28, tag:20}}
 ].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
 
 const DONJON_DATA = [
-  {name:"Équilibre", color:"#BDC3C7"},
-  {name:"Ruine de la Guerrière", color:"#922B21"},
-  {name:"Fantôme des Profondeurs", color:"#154360"},
-  {name:"Flèche de la Vigie", color:"#F1C40F"},
-  {name:"Trône Brisé", color:"#6C3483"},
-  {name:"Hôte Vesper", color:"#2E86C1"},
-  {name:"Dualité", color:"#C0392B"},
-  {name:"Fosse de l’Hérésie", color:"#145A32"},
-  {name:"Étreinte de l’Avarice", color:"#F4D03F"},
-  {name:"Prophétie", color:"#2C2C54"}
+  {name:"Équilibre", color:"#BDC3C7", defaultFont:{activity:28, tag:20}},
+  {name:"Ruine de la Guerrière", color:"#922B21", defaultFont:{activity:26, tag:20}},
+  {name:"Fantôme des Profondeurs", color:"#154360", defaultFont:{activity:28, tag:20}},
+  {name:"Flèche de la Vigie", color:"#F1C40F", defaultFont:{activity:26, tag:20}},
+  {name:"Trône Brisé", color:"#6C3483", defaultFont:{activity:28, tag:20}},
+  {name:"Hôte Vesper", color:"#2E86C1", defaultFont:{activity:26, tag:20}},
+  {name:"Dualité", color:"#C0392B", defaultFont:{activity:28, tag:20}},
+  {name:"Fosse de l’Hérésie", color:"#145A32", defaultFont:{activity:26, tag:20}},
+  {name:"Étreinte de l’Avarice", color:"#F4D03F", defaultFont:{activity:26, tag:20}},
+  {name:"Prophétie", color:"#2C2C54", defaultFont:{activity:28, tag:20}}
 ].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
 
 /* DOM refs */
@@ -617,7 +664,7 @@ function applyLayout(){
   }
 }
 
-/* util: ouvre le picker de date de façon fiable (showPicker si dispo, sinon fallback) */
+/* util: ouvre l'input date */
 function openDatePicker(input){
   if (!input) return;
   if (typeof input.showPicker === 'function') {
@@ -667,7 +714,9 @@ function buildPalettes(){
 }
 buildPalettes();
 
-/* liste activités */
+/* liste activités
+   - si une activité a des tailles par défaut (defaultFont), on applique ces valeurs aux sliders
+*/
 function renderActivityList(){
   activityList.innerHTML = '';
   const cat = categorySelect.value;
@@ -699,8 +748,16 @@ function renderActivityList(){
     const it = document.createElement('div'); it.className='activity-item';
     it.innerHTML = `<div>${a.name}</div><div style="width:18px;height:18px;background:${a.color};"></div>`;
     it.addEventListener('click', ()=>{
-      currentSelectedActivity = { name:a.name, color:a.color, custom:false };
+      // current selection includes default font sizes if available
+      const fonts = a.defaultFont ? { ...a.defaultFont } : undefined;
+      currentSelectedActivity = { name:a.name, color:a.color, custom:false, defaultFont: fonts };
       nameColorPicker.value = a.color;
+      // If predefined fonts exist, apply them to sliders for quick setup
+      if(fonts){
+        activityFontRange.value = fonts.activity || getDefaultActivityFont();
+        tagFontRange.value = fonts.tag || getDefaultTagFont();
+        applyPreviewFontSizesToCurrentSlot();
+      }
       highlightSelected();
     });
     activityList.appendChild(it);
@@ -731,6 +788,14 @@ function getDefaultTagFont() {
   const v = getComputedStyle(document.documentElement).getPropertyValue('--font-tag').trim();
   return parseInt(v) || 20;
 }
+
+/* default rules including the two new special activities */
+const DEFAULT_RULES = {
+  roulette: "Chaque joueur aura droit à 3 tirage ce qui déterminera l'arme qu'il devra garder tout le long du raid. Les tirages ne sont pas rétroactifs alors choisissez bien.",
+  special: "Composition d'une majorité de joueurs expérimentés, afin de prendre le temps pour l'apprentissage d'activités considérées difficiles.",
+  decouverte: "Ceci est une activité découverte que vous soyez éxperimenté ou non il est ouvert a tous afin de découvrir celle-ci.",
+  chill: "Activités réservers majoritairement pour une equipe de joueurs éxpériementé afin d'accomplir le raid sans encombre."
+};
 
 function openModalForKey(key){
   currentKey = key;
@@ -766,6 +831,9 @@ function openModalForKey(key){
     tagHex.value = s.special.color || '#ffd400';
   }
 
+  renderActivityList();
+  highlightSelected();
+
   // préparer sliders: si la case a des tailles sauvegardées => use them, sinon fallback aux variables CSS
   const defaultActivityFont = getDefaultActivityFont();
   const defaultTagFont = getDefaultTagFont();
@@ -777,9 +845,6 @@ function openModalForKey(key){
   activityFontValue.textContent = savedActivityFont + 'px';
   tagFontRange.value = savedTagFont;
   tagFontValue.textContent = savedTagFont + 'px';
-
-  renderActivityList();
-  highlightSelected();
 
   // preview: modify the clicked slot only (live preview)
   const [day,hour] = key.split('-');
@@ -826,6 +891,16 @@ specialSelect.addEventListener('change', (e)=>{
     tagHex.value = tagColorPicker.value;
     specialRules.value = DEFAULT_RULES.special;
   }
+  if(v === 'decouverte'){
+    tagColorPicker.value = '#00c853';
+    tagHex.value = tagColorPicker.value;
+    specialRules.value = DEFAULT_RULES.decouverte;
+  }
+  if(v === 'chill'){
+    tagColorPicker.value = '#9c27b0';
+    tagHex.value = tagColorPicker.value;
+    specialRules.value = DEFAULT_RULES.chill;
+  }
   if(v === 'none'){
     specialRules.value = '';
   }
@@ -835,12 +910,6 @@ tagHex.addEventListener('input', ()=>{
   const v = tagHex.value.trim();
   if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) tagColorPicker.value = v;
 });
-
-/* règles par défaut */
-const DEFAULT_RULES = {
-  roulette: "Chaque joueur aura droit à 3 tirage ce qui déterminera l'arme qu'il devra garder tout le long du raid. Les tirages ne sont pas rétroactifs alors choisissez bien.",
-  special: "Composition d'une majorité de joueurs expérimentés, afin de prendre le temps pour l'apprentissage d'activités considérées difficiles."
-};
 
 /* slider live listeners (mise à jour du preview sur la case courante) */
 function applyPreviewFontSizesToCurrentSlot(){
@@ -880,11 +949,12 @@ saveBtn.addEventListener('click', ()=>{
     }
   }else{
     if(currentSelectedActivity){
+      // include defaultFont if present so it's easy to reuse
       activity = {...currentSelectedActivity, color:nameColorPicker.value};
     }else{
       const list = categorySelect.value === 'raid' ? RAID_DATA : DONJON_DATA;
       const first = list[0];
-      activity = { name:first.name, color:first.color };
+      activity = { name:first.name, color:first.color, defaultFont:first.defaultFont };
     }
   }
 
@@ -894,12 +964,14 @@ saveBtn.addEventListener('click', ()=>{
   if(type !== 'none'){
     const name = type === 'custom'
       ? (specialName.value.trim() || 'Personnalisée')
-      : (type === 'roulette' ? 'Roulette' : 'Soirée spéciale');
+      : (type === 'roulette' ? 'Roulette' : (type === 'decouverte' ? 'Découverte' : (type === 'chill' ? 'CHILL' : 'Soirée spéciale')));
     let rules = specialRules.value.trim();
     if (!rules) {
       if (type === 'roulette') rules = DEFAULT_RULES.roulette;
       else if (type === 'special') rules = DEFAULT_RULES.special;
-      else rules = ""; 
+      else if (type === 'decouverte') rules = DEFAULT_RULES.decouverte;
+      else if (type === 'chill') rules = DEFAULT_RULES.chill;
+      else rules = "";
     }
     const color = tagColorPicker.value || '#ffffff';
     special = { type, name, rules, color };
@@ -932,8 +1004,6 @@ cancelBtn.addEventListener('click', ()=>{
       if(nameEl) nameEl.style.fontSize = b.nameFont || '';
       if(tagEl) {
         tagEl.style.fontSize = b.tagFont || '';
-      } else if(b.tagExists){
-        // if tag previously existed but currently not in DOM, nothing to do
       }
     }
     delete previewBackup[currentKey];
@@ -1004,6 +1074,8 @@ function updateRules(){
   const rouletteKey = keys.find(k => state[k]?.special?.type === 'roulette');
   const specialKey  = keys.find(k => state[k]?.special?.type === 'special');
   const customKey   = keys.find(k => state[k]?.special?.type === 'custom');
+  const decKey      = keys.find(k => state[k]?.special?.type === 'decouverte');
+  const chillKey    = keys.find(k => state[k]?.special?.type === 'chill');
 
   const lines = [];
 
@@ -1022,6 +1094,24 @@ function updateRules(){
       title: 'Soirée spéciale',
       text: s.rules || DEFAULT_RULES.special,
       color: s.color || '#ff3b3b'
+    });
+  }
+
+  if(decKey){
+    const s = state[decKey].special;
+    lines.push({
+      title: s.name || 'Découverte',
+      text: s.rules || DEFAULT_RULES.decouverte,
+      color: s.color || '#00c853'
+    });
+  }
+
+  if(chillKey){
+    const s = state[chillKey].special;
+    lines.push({
+      title: s.name || 'CHILL',
+      text: s.rules || DEFAULT_RULES.chill,
+      color: s.color || '#9c27b0'
     });
   }
 
@@ -1054,60 +1144,36 @@ resetBtn.addEventListener('click', ()=>{
   refreshGrid();
 });
 
-/* export PNG
-   - on retire temporairement la transformation visuelle du wrapper et du canvas pour capturer la source propre
-   - finally garantit le nettoyage si html2canvas plante
+/* EXPORT PNG
+   - On inclut visuellement la topbar (début/fin) dans le canvas POUR L'EXPORT en déplaçant temporairement
+     le topbar dans le canvas avant capture, tout en masquant les boutons Export/Réinitialiser.
+   - Les offsets et la taille des dates sont contrôlables via les variables CSS :
+     --export-dates-font-size, --export-dates-offset-x, --export-dates-offset-y
 */
 exportPng.addEventListener('click', async () => {
+  // sauvegarde de l'état pour restauration
+  const originalTopbarParent = topbar.parentNode;
+  const originalTopbarNext = topbar.nextSibling;
+  const originalTopbarStyle = {
+    position: topbar.style.position || '',
+    left: topbar.style.left || '',
+    top: topbar.style.top || '',
+    width: topbar.style.width || '',
+    zIndex: topbar.style.zIndex || ''
+  };
+
+  // masquer uniquement les boutons qui ne doivent pas apparaître dans l'export
+  const prevExportDisplay = exportPng.style.display || '';
+  const prevResetDisplay = resetBtn.style.display || '';
+  exportPng.style.display = 'none';
+  resetBtn.style.display = 'none';
+
   try {
-    // masquer UI (n'affecte pas la topbar hors du canvas)
+    // appliquer capture-mode (masque les éléments indiqués via .canvas.capture)
     canvas.classList.add('capture');
     modalBack.style.display = 'none';
 
-    // petit délai pour que le DOM applique la classe
-    await new Promise(r => setTimeout(r, 120));
-
-    // --- Créer une copie temporaire des dates DANS le canvas ---
-    const tmpDates = document.createElement('div');
-    tmpDates.className = 'export-dates-temp';
-    // récupérer textes (format affiché)
-    const startText = displayStart.textContent || '—';
-    const endText = displayEnd.textContent || '—';
-    tmpDates.innerHTML = `
-      <div class="export-date export-start">${startText}</div>
-      <div class="export-date export-end">${endText}</div>
-    `;
-    // style inline pour s'assurer qu'il est capturé correctement
-    Object.assign(tmpDates.style, {
-      position: 'absolute',
-      left: 'var(--topbar-left)',   // place approximative alignée avec topbar
-      top: 'calc(var(--topbar-top) + 6px)', // ajuster si besoin
-      width: 'var(--grid-width)',
-      display: 'flex',
-      gap: '12px',
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      pointerEvents: 'none',
-      zIndex: 999
-    });
-    // styles pour les deux dates (tu peux ajuster taille/couleur)
-    const css = document.createElement('style');
-    css.textContent = `
-      .export-dates-temp .export-date {
-        font-family: "Cinzel", serif;
-        font-weight: 700;
-        color: #ffffff;
-        font-size: var(--font-day);
-        line-height: 1;
-        margin-right: 18px;
-        text-shadow: 0 1px 0 rgba(0,0,0,0.6);
-      }
-    `;
-    // injecter dans le canvas (avant capture)
-    canvas.appendChild(css);
-    canvas.appendChild(tmpDates);
-
-    // sauvegarder transform actuel et le retirer pour capture propre
+    // sauvegarder et retirer transforms pour coordonnées réelles
     const prevWrapperTransform = canvasWrapper ? canvasWrapper.style.transform : '';
     const prevWrapperOrigin = canvasWrapper ? canvasWrapper.style.transformOrigin : '';
     const prevCanvasTransform = canvas.style.transform;
@@ -1120,10 +1186,46 @@ exportPng.addEventListener('click', async () => {
     canvas.style.transform = 'none';
     canvas.style.transformOrigin = 'top left';
 
+    // petit délai pour recalcul des positions
+    await new Promise(r => setTimeout(r, 50));
+
+    // mesurer positions
+    const canvasRect = canvas.getBoundingClientRect();
+    const topbarRect = topbar.getBoundingClientRect();
+
+    // déplacer topbar dans le canvas (position absolue relative au canvas)
+    // calculer gauche et top relatifs au canvas
+    const relLeft = topbarRect.left - canvasRect.left + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--export-dates-offset-x')) || 0;
+    const relTop  = topbarRect.top  - canvasRect.top  + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--export-dates-offset-y')) || 0;
+
+    // appliquer styles inline puis append
+    topbar.style.position = 'absolute';
+    topbar.style.left = relLeft + 'px';
+    topbar.style.top = relTop + 'px';
+    topbar.style.width = getComputedStyle(topbar).width;
+    topbar.style.zIndex = 10000;
+
+    canvas.appendChild(topbar);
+
+    // ajouter styles temporaires pour le look des dates (on augmente la taille si souhaité)
+    const cssTmp = document.createElement('style');
+    cssTmp.id = 'export-dates-temp-style';
+    cssTmp.textContent = `
+      #topbar .date-block .value { font-size: var(--export-dates-font-size) !important; }
+      /* assurer que les petits labels ne passent pas en overflow */
+      #topbar .date-block .label { font-size: 14px !important; opacity: .9; }
+      /* masquer explicitement les boutons si un navigateur ignore le style inline précédent */
+      #topbar .btn-primary, #topbar .btn-ghost { display:none !important; }
+    `;
+    canvas.appendChild(cssTmp);
+
+    // attendre un court instant pour que le DOM mette à jour
+    await new Promise(r => setTimeout(r, 80));
+
     // capture à haute résolution
     const img = await html2canvas(canvas, { scale: 2, useCORS: true, backgroundColor: null });
 
-    // restaurer transform
+    // restaurer transforms
     if (canvasWrapper) {
       canvasWrapper.style.transform = prevWrapperTransform;
       canvasWrapper.style.transformOrigin = prevWrapperOrigin;
@@ -1131,20 +1233,27 @@ exportPng.addEventListener('click', async () => {
     canvas.style.transform = prevCanvasTransform;
     canvas.style.transformOrigin = prevCanvasOrigin;
 
-    // retirer l'élément temporaire et le style injecté
-    tmpDates.remove();
-    css.remove();
+    // restaurer topbar à son parent d'origine
+    if (originalTopbarNext) originalTopbarParent.insertBefore(topbar, originalTopbarNext);
+    else originalTopbarParent.appendChild(topbar);
 
-    // --- construire un nom de fichier sûr contenant les dates ---
-    // on récupère les valeurs ISO des inputs si disponibles, sinon on utilise le texte affiché
+    // restaurer styles inline
+    topbar.style.position = originalTopbarStyle.position;
+    topbar.style.left = originalTopbarStyle.left;
+    topbar.style.top = originalTopbarStyle.top;
+    topbar.style.width = originalTopbarStyle.width;
+    topbar.style.zIndex = originalTopbarStyle.zIndex;
+
+    // retirer CSS temporaire
+    const cssEl = document.getElementById('export-dates-temp-style');
+    if(cssEl) cssEl.remove();
+
+    // créer nom de fichier
     function safeDateForFilename(inputValue, displayText) {
       if (inputValue) {
-        // inputValue est "YYYY-MM-DD" -> on convertit en "DD-MM-YYYY"
         const parts = inputValue.split('-');
         if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
       }
-      // fallback : tenter d'extraire jour/mois/année depuis le texte affiché
-      // ex: "12 janv." -> on retourne tel quel en remplaçant espaces par _
       return displayText.replace(/\s+/g, '_').replace(/[\/\\:]/g, '-');
     }
     const startSafe = safeDateForFilename(inputStart.value, displayStart.textContent);
@@ -1160,12 +1269,13 @@ exportPng.addEventListener('click', async () => {
   } catch (err) {
     alert('Erreur PNG : ' + (err && err.message ? err.message : err));
   } finally {
-    // s'assurer que la classe est toujours retirée
+    // restauration UI et états
     canvas.classList.remove('capture');
     modalBack.style.display = 'none';
+    exportPng.style.display = prevExportDisplay;
+    resetBtn.style.display = prevResetDisplay;
   }
 });
-
 
 /* date pickers: ouvrir input[type=date] via bouton et mettre à jour l'affichage */
 displayStart.addEventListener('click', ()=> {
