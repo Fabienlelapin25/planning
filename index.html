@@ -9,11 +9,8 @@
 <style>
 /* =========================
    VARIABLES DE POSITION (modifier ici en px)
-   - change les valeurs en px pour déplacer les éléments
-   - tu peux aussi appeler setLayout(...) depuis la console
    ========================= */
 :root{
-  /* canvas / grid sizes */
   --canvas-w:1700px;
   --canvas-h:1024px;
   --grid-width:1450px;
@@ -22,42 +19,32 @@
   --slot-gap:12px;
   --border-w:3px;
 
-  /* typographie */
   --font-day:28px;
   --font-time:36px;
   --font-activity:28px;
   --font-tag:24px;
 
-  /* taille du texte pour la zone Règles (modifiable) */
   --rules-font:20px;
-
-  /* --- variable contrôlant la taille du label "Règles :" --- */
   --rules-label-font-size: 18px;
+  --rules-width: 1440px;
+  --rules-padding: 10px;
+  --rules-max-height: 220px;
 
-  /* contrôles de la boîte Règles (largeur, padding, hauteur max) */
-  --rules-width: 1440px;      /* largeur de la case Règles */
-  --rules-padding: 10px;     /* padding interne */
-  --rules-max-height: 220px; /* hauteur max avant scroll */
+  --export-dates-font-size: 48px;
+  --export-dates-offset-x: -10px;
+  --export-dates-offset-y: 0px;
 
-  /* taille et offset pour les dates lors de l'export (modifiable) */
-  --export-dates-font-size: 48px; /* changer ici la taille des dates dans l'export */
-  --export-dates-offset-x: -10px;   /* décalage horizontal additionnel (px) */
-  --export-dates-offset-y: 0px;   /* décalage vertical additionnel (px) */
-
-  /* couleurs */
   --default-tag-color:#ffffff;
   --roulette-default:#ffd400;
   --special-default:#ff3b3b;
 
-  /* POSITIONS (modifiable en px) */
-  --topbar-left: 540px;    /* left du topbar (px) */
-  --topbar-top: 8px;       /* top du topbar (px) */
-  --grid-left: 45px;       /* left du grid-wrap (px) */
-  --grid-top: 180px;       /* top du grid-wrap (px) */
-  --rules-left: 210px;     /* left de la zone rules (px) */
-  --rules-top: 640px;      /* top de la zone rules (px) */
+  --topbar-left: 540px;
+  --topbar-top: 8px;
+  --grid-left: 45px;
+  --grid-top: 180px;
+  --rules-left: 210px;
+  --rules-top: 640px;
 
-  /* offsets pour éléments individuels (translate) */
   --displayStart-offset-x: 0px;
   --displayStart-offset-y: 0px;
   --displayEnd-offset-x: 0px;
@@ -78,307 +65,73 @@ html,body{
   display:flex;align-items:center;justify-content:center;
   padding:12px;
 }
-.canvas-wrapper {
-  position: relative;
-  width: var(--canvas-w);
-  height: var(--canvas-h);
-  transform-origin: top left;
-}
-.canvas{
-  width:var(--canvas-w);height:var(--canvas-h);
-  position:relative;
-  background-image:url('https://i.imgur.com/Slf8Flb.png');
-  background-size:contain;
-  background-repeat:no-repeat;
-  background-position:center;
-  background-color:#000;
-  border-radius:0;
-  overflow:hidden;
-  box-shadow:0 20px 60px rgba(0,0,0,0.6);
-}
+.canvas-wrapper { position: relative; width: var(--canvas-w); height: var(--canvas-h); transform-origin: top left; }
+.canvas{ width:var(--canvas-w);height:var(--canvas-h); position:relative; background-image:url('https://i.imgur.com/Slf8Flb.png'); background-size:contain; background-repeat:no-repeat; background-position:center; background-color:#000; border-radius:0; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.6); }
 
-/* topbar : positionnée via variables */
-.topbar{
-  z-index: 9999;
-  pointer-events: auto;
-  position: absolute;
-  left: var(--topbar-left);
-  top: var(--topbar-top);
-  width: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 0;
-}
-.topbar-inner{
-  width: var(--grid-width);
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  font-family: Cinzel, serif;
-  box-sizing: border-box;
-}
-.date-block{
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  position: relative;
-}
+/* topbar */
+.topbar{ z-index: 9999; pointer-events: auto; position: absolute; left: var(--topbar-left); top: var(--topbar-top); width: auto; display: flex; align-items: center; justify-content: center; padding: 12px 0; }
+.topbar-inner{ width: var(--grid-width); display: flex; align-items: center; gap: 18px; font-family: Cinzel, serif; box-sizing: border-box; }
+.date-block{ display: flex; flex-direction: column; gap: 4px; position: relative; }
 .date-block .label{ font-size: 12px; opacity: 0.9; }
-.date-block .value{
-  font-size: var(--font-day);
-  font-weight: 700;
-}
+.date-block .value{ font-size: var(--font-day); font-weight: 700; }
 
 /* action buttons */
-.btn-primary, .btn-ghost{
-  padding: 8px 12px;
-  border-radius: 0;
-  border: none;
-  cursor: pointer;
-  font-weight: 800;
-}
-/* Ces boutons utilisent des variables pour pouvoir les décaler indépendamment de la date */
+.btn-primary, .btn-ghost{ padding: 8px 12px; border-radius: 0; border: none; cursor: pointer; font-weight: 800; }
 .btn-primary{ background: #1f6feb; color: #fff; transform: translate(var(--export-offset-x), var(--export-offset-y)); }
 .btn-ghost{ background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.4); transform: translate(var(--reset-offset-x), var(--reset-offset-y)); }
 
-/* input date invisible mais positionné sous le bouton pour garantir l'ouverture du picker */
-.date-input{
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  border: none;
-  background: transparent;
-  pointer-events: auto;
-  -webkit-appearance: none;
-  appearance: none;
-}
-.date-btn{
-  position: relative;
-  z-index: 2;
-  background: transparent;
-  border: none;
-  color: inherit;
-  font-family: "Cinzel", serif;
-  font-weight: 700;
-  font-size: var(--font-day);
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-/* translate offsets (contrôlables via variables) */
+/* input date invisible */
+.date-input{ position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; border: none; background: transparent; pointer-events: auto; -webkit-appearance: none; appearance: none; }
+.date-btn{ position: relative; z-index: 2; background: transparent; border: none; color: inherit; font-family: "Cinzel", serif; font-weight: 700; font-size: var(--font-day); line-height: 1; cursor: pointer; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 #displayStart { transform: translate(var(--displayStart-offset-x), var(--displayStart-offset-y)); }
 #displayEnd   { transform: translate(var(--displayEnd-offset-x), var(--displayEnd-offset-y)); }
-
 .date-btn:focus{ outline: 2px solid rgba(255,255,255,0.12); }
 
-/* grid : position via variables */
-.grid-wrap{
-  position: absolute;
-  left: var(--grid-left);
-  top: var(--grid-top);
-  width: var(--grid-width);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.grid-header{
-  display: grid;
-  grid-template-columns: var(--time-col-w) repeat(6, 1fr);
-  gap: 12px;
-  align-items: center;
-}
-.grid-header .time-col{
-  padding-left: 8px;
-  font-family: Cinzel, serif;
-  font-weight: 800;
-  font-size: var(--font-time);
-}
-.grid-header .day{
-  padding: 10px;
-  border-radius: 0;
-  text-align: center;
-  background: rgba(0,0,0,0.55);
-  font-family: Cinzel, serif;
-  font-weight: 800;
-  font-size: var(--font-day);
-}
-.grid{
-  display: grid;
-  grid-template-columns: var(--time-col-w) repeat(6, 1fr);
-  grid-auto-rows: var(--slot-h);
-  gap: var(--slot-gap);
-}
-.time-cell{
-  display: flex;
-  align-items: center;
-  padding-left: 80px;
-  font-family: Cinzel, serif;
-  font-weight: 900;
-  font-size: var(--font-time);
-}
-.slot{
-  position: relative;
-  background: rgba(0,0,0,0.55);
-  border: var(--border-w) solid rgba(255,255,255,0.06);
-  border-radius: 0;
-  padding: 12px 12px 24px 12px; /* plus d'espace en bas pour le tag */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: stretch;
-  overflow: hidden;
-  cursor: pointer;
-}
-.slot.empty{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #cfcfcf;
-  font-weight: 800;
-}
-.slot .content{
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-  align-items: center;
-}
-.activity-name{
-  font-family:Cinzel,serif;font-weight:900;font-size:var(--font-activity);
-  text-align:center;word-break:break-word;color:#fff;
-}
+/* grid */
+.grid-wrap{ position: absolute; left: var(--grid-left); top: var(--grid-top); width: var(--grid-width); display: flex; flex-direction: column; gap: 12px; }
+.grid-header{ display: grid; grid-template-columns: var(--time-col-w) repeat(6, 1fr); gap: 12px; align-items: center; }
+.grid-header .time-col{ padding-left: 8px; font-family: Cinzel, serif; font-weight: 800; font-size: var(--font-time); }
+.grid-header .day{ padding: 10px; border-radius: 0; text-align: center; background: rgba(0,0,0,0.55); font-family: Cinzel, serif; font-weight: 800; font-size: var(--font-day); }
+.grid{ display: grid; grid-template-columns: var(--time-col-w) repeat(6, 1fr); grid-auto-rows: var(--slot-h); gap: var(--slot-gap); }
+.time-cell{ display: flex; align-items: center; padding-left: 80px; font-family: Cinzel, serif; font-weight: 900; font-size: var(--font-time); }
+.slot{ position: relative; background: rgba(0,0,0,0.55); border: var(--border-w) solid rgba(255,255,255,0.06); border-radius: 0; padding: 12px 12px 24px 12px; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; overflow: hidden; cursor: pointer; }
+.slot.empty{ display: flex; align-items: center; justify-content: center; color: #cfcfcf; font-weight: 800; }
+.slot .content{ display: flex; flex-direction: column; gap: 8px; flex: 1; align-items: center; }
+.activity-name{ font-family:Cinzel,serif;font-weight:900;font-size:var(--font-activity); text-align:center;word-break:break-word;color:#fff; }
 
-/* tag (activité spéciale) :
-   - prend pratiquement toute la largeur disponible (left/right) pour éviter d'être trop étroit
-   - padding intérieur pour "respirer"
-   - autorise plusieurs lignes (jusqu'à ~4) et remonte vers le haut si nécessaire
-*/
-.tag {
-  position: absolute;
-  bottom: 1px;                   /* légèrement plus haut */
-  left: 12px;                     /* bord gauche du tag */
-  right: 12px;                    /* bord droit du tag -> largeur max = slot width - 24px */
-  font-family: Cinzel, serif;
-  font-weight: 900;
-  font-size: var(--font-tag);
-  line-height: 1.05;
-  white-space: normal;            /* autorise retour à la ligne */
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  text-align: center;
-  padding: 6px 1px;              /* respirer à l'intérieur du tag */
-  max-height: calc(var(--font-tag) * 4); /* autorise ~4 lignes */
-  color: var(--default-tag-color);
-  background: transparent;
-  pointer-events: none;
-  box-sizing: border-box;
-  border-radius: 2px;
-}
+/* tag */
+.tag { position: absolute; bottom: 1px; left: 12px; right: 12px; font-family: Cinzel, serif; font-weight: 900; font-size: var(--font-tag); line-height: 1.05; white-space: normal; word-break: break-word; overflow-wrap: anywhere; text-align: center; padding: 6px 1px; max-height: calc(var(--font-tag) * 4); color: var(--default-tag-color); background: transparent; pointer-events: none; box-sizing: border-box; border-radius: 2px; }
 
 /* gear */
-.gear{
-  position:absolute;right:10px;top:10px;
-  width:30px;height:30px;border-radius:0;
-  display:flex;align-items:center;justify-content:center;
-  background:rgba(0,0,0,0.6);
-  opacity:0;transition:opacity .12s;
-  cursor:pointer;font-size:16px;
-}
+.gear{ position:absolute;right:10px;top:10px; width:30px;height:30px;border-radius:0; display:flex;align-items:center;justify-content:center; background:rgba(0,0,0,0.6); opacity:0;transition:opacity .12s; cursor:pointer;font-size:16px; }
 .slot:hover .gear{opacity:1}
 
-/* rules : position via variables (pas de scroll, la boîte s'agrandit avec le contenu) */
-.rules{
-  position: absolute;
-  left: var(--rules-left);
-  top: var(--rules-top);
-  width: var(--rules-width);
-  padding: var(--rules-padding);
-  border-radius: 0;
-  background: rgba(0,0,0,0.7);
-  font-family: Cinzel, serif;
-  font-size: var(--rules-font);
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-  box-sizing: border-box;
-
-  /* plus de limitation de hauteur ni de scroll : la boîte prendra la hauteur nécessaire */
-  max-height: none;
-  overflow: visible;
-}
-
-/* cible uniquement le label "Règles :" dans la zone .rules — taille contrôlable via la variable --rules-label-font-size */
-.rules > .small {
-  font-size: var(--rules-label-font-size);
-  font-weight: 800;
-}
-
-/* style des lignes */
-.rules .rule-line{
-  padding: 8px;
-  border-radius: 0;
-  background: rgba(255,255,255,0.02);
-  font-size: inherit;
-  line-height: 1.25;
-  word-break: break-word;
-}
+/* rules */
+.rules{ position: absolute; left: var(--rules-left); top: var(--rules-top); width: var(--rules-width); padding: var(--rules-padding); border-radius: 0; background: rgba(0,0,0,0.7); font-family: Cinzel, serif; font-size: var(--rules-font); display: none; flex-direction: column; gap: 8px; box-sizing: border-box; max-height: none; overflow: visible; }
+.rules > .small { font-size: var(--rules-label-font-size); font-weight: 800; }
+.rules .rule-line{ padding: 8px; border-radius: 0; background: rgba(255,255,255,0.02); font-size: inherit; line-height: 1.25; word-break: break-word; }
 
 /* modal */
-.modal-back{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,0.6);
-  display:none;align-items:center;justify-content:center;
-  z-index:200;
-}
-.modal{
-  width:820px;background:#050a10;border-radius:0;
-  padding:16px;color:#fff;
-  box-shadow:0 12px 40px rgba(0,0,0,0.6);
-  font-family:Inter,system-ui;
-}
+.modal-back{ position:fixed;inset:0; background:rgba(0,0,0,0.6); display:none;align-items:center;justify-content:center; z-index:200; }
+.modal{ width:820px;background:#050a10;border-radius:0; padding:16px;color:#fff; box-shadow:0 12px 40px rgba(0,0,0,0.6); font-family:Inter,system-ui; }
 .modal h3{font-family:Cinzel,serif;margin:0 0 8px 0}
 .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .section-title{font-weight:800;font-family:Cinzel,serif;margin-bottom:6px}
-.select,input[type="text"],input[type="color"],textarea{
-  width:100%;padding:10px;border-radius:0;
-  border:1px solid rgba(255,255,255,0.2);
-  background:#050a10;color:#fff;
-}
-.activity-list{
-  max-height:260px;overflow:auto;border-radius:0;
-  padding:6px;background:#020408;
-  border:1px solid rgba(255,255,255,0.15);
-}
-.activity-item{
-  padding:8px;border-radius:0;
-  display:flex;justify-content:space-between;align-items:center;
-  cursor:pointer;
-}
+.select,input[type="text"],input[type="color"],textarea{ width:100%;padding:10px;border-radius:0;border:1px solid rgba(255,255,255,0.2); background:#050a10;color:#fff; }
+.activity-list{ max-height:260px;overflow:auto;border-radius:0;padding:6px;background:#020408;border:1px solid rgba(255,255,255,0.15); }
+.activity-item{ padding:8px;border-radius:0; display:flex;justify-content:space-between;align-items:center; cursor:pointer; }
 .activity-item:hover{background:rgba(255,255,255,0.06)}
 .color-palette{display:flex;gap:8px;align-items:center}
-.color-swatch{
-  width:34px;height:34px;border-radius:0;
-  border:2px solid rgba(255,255,255,0.4);
-  cursor:pointer;
-}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:100px}
+.color-swatch{ width:34px;height:34px;border-radius:0;border:2px solid rgba(255,255,255,0.4); cursor:pointer; }
+.modal-actions{ display:flex;gap:8px;justify-content:flex-end;margin-top:100px }
 
 /* sliders */
 .slider-row{display:flex;align-items:center;gap:8px;margin-top:8px}
 .slider-row input[type="range"]{flex:1}
 .slider-value{min-width:44px;text-align:right;font-weight:700}
 
-/* hide UI during capture (on masque uniquement ce qu'on ne veut pas exporter) */
-.canvas.capture .gear,
-.canvas.capture .modal-back,
-.canvas.capture .btn-primary,
-.canvas.capture .btn-ghost { display:none !important; }
+/* hide UI during capture */
+.canvas.capture .gear, .canvas.capture .modal-back, .canvas.capture .btn-primary, .canvas.capture .btn-ghost { display:none !important; }
 
 .small{font-size:13px;opacity:0.9}
 
@@ -391,7 +144,7 @@ html,body{
 </head>
 <body>
 
-  <!-- TOPBAR (placée en dehors du canvas pour ne pas être scalée) -->
+  <!-- TOPBAR -->
   <div class="topbar" id="topbar" role="banner" aria-label="Barre supérieure">
     <div class="topbar-inner">
       <div class="date-block">
@@ -411,7 +164,7 @@ html,body{
     </div>
   </div>
 
-  <!-- wrapper qui sera scalée -->
+  <!-- wrapper -->
   <div class="canvas-wrapper" id="canvasWrapper">
     <div class="canvas" id="canvas">
 
@@ -484,14 +237,12 @@ html,body{
           <input type="color" id="nameColorPicker" value="#ffffff" />
         </div>
 
-        <!-- slider pour taille du texte activité principale -->
         <div style="height:8px"></div>
         <div class="small">Taille du texte (activité principale)</div>
         <div class="slider-row">
           <input type="range" id="activityFontRange" min="12" max="72" step="1" />
           <div class="slider-value" id="activityFontValue">28px</div>
         </div>
-
       </div>
 
       <!-- droite -->
@@ -505,7 +256,7 @@ html,body{
           <option value="decouverte">Découverte</option>
           <option value="chill">CHILL</option>
           <option value="custom">Personnalisée</option>
-          <option value="custom">Maîtrise</option>
+          <option value="maitrise">Maîtrise</option>
         </select>
 
         <div style="height:8px"></div>
@@ -525,14 +276,12 @@ html,body{
         <div style="height:6px"></div>
         <input type="text" id="tagHex" placeholder="#rrggbb" />
 
-        <!-- slider pour taille du tag (activité spéciale) -->
         <div style="height:8px"></div>
         <div class="small">Taille du texte (tag spécial)</div>
         <div class="slider-row">
           <input type="range" id="tagFontRange" min="10" max="48" step="1" />
           <div class="slider-value" id="tagFontValue">20px</div>
         </div>
-
       </div>
     </div>
 
@@ -545,7 +294,7 @@ html,body{
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-/* layout (positions en px) — modifie ici si tu préfères */
+/* layout */
 const layout = {
   topbar: { left: 540, top: 8 },
   grid:   { left: 45, top: 200 },
@@ -558,7 +307,7 @@ const layout = {
   }
 };
 
-/* couleurs RAID / DONJON et (optionnel) tailles par défaut pour une assignment rapide */
+/* RAID / DONJON data - added new raid properly (comma included) */
 const RAID_DATA = [
   {name:"Désert Perpétuel", color:"#7B1FA2", defaultFont:{activity:30, tag:22}},
   {name:"Serment du Disciple", color:"#2E003E", defaultFont:{activity:28, tag:20}},
@@ -568,7 +317,7 @@ const RAID_DATA = [
   {name:"Crypte de la Pierre", color:"#5DADE2", defaultFont:{activity:28, tag:20}},
   {name:"Chute de Cropta", color:"#1ABC9C", defaultFont:{activity:26, tag:20}},
   {name:"Chute du Roi", color:"#d378b2", defaultFont:{activity:26, tag:20}},
-  {name:"Caveau de Verre", color:"#1F8EFA", defaultFont:{activity:28, tag:20}}
+  {name:"Caveau de Verre", color:"#1F8EFA", defaultFont:{activity:28, tag:20}},
   {name:"Orée du salut", color:"#9C163B", defaultFont:{activity:28, tag:20}}
 ].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
 
@@ -619,7 +368,7 @@ const activityFontValue = document.getElementById('activityFontValue');
 const tagFontRange = document.getElementById('tagFontRange');
 const tagFontValue = document.getElementById('tagFontValue');
 
-/* expose setLayout to change positions from console */
+/* apply layout */
 function applyLayoutFromObject(l){
   if (!l) return;
   if (l.topbar) {
@@ -647,11 +396,9 @@ function applyLayoutFromObject(l){
   }
 }
 
-/* wrapper applyLayout (keeps backward compatibility with your applyLayout) */
+/* wrapper applyLayout */
 function applyLayout(){
-  // topbar is outside canvas: position relative to body via CSS variables
   applyLayoutFromObject(layout);
-  // also set inline positions for legacy code that used style.left/top directly
   if (layout.topbar) {
     topbar.style.left = layout.topbar.left + 'px';
     topbar.style.top = layout.topbar.top + 'px';
@@ -670,15 +417,14 @@ function applyLayout(){
 function openDatePicker(input){
   if (!input) return;
   if (typeof input.showPicker === 'function') {
-    try { input.showPicker(); return; } catch(e){ /* fallback */ }
+    try { input.showPicker(); return; } catch(e){ }
   }
   input.focus();
   setTimeout(()=> {
-    try { input.click(); } catch(e){ /* certains navigateurs ignorent le click programmatique */ }
+    try { input.click(); } catch(e){ }
   }, 10);
 }
 
-/* handlers pour les boutons d'affichage de date */
 displayStart.addEventListener('click', ()=> openDatePicker(inputStart));
 displayEnd.addEventListener('click',   ()=> openDatePicker(inputEnd));
 
@@ -716,45 +462,37 @@ function buildPalettes(){
 }
 buildPalettes();
 
-/* liste activités
-   - si une activité a des tailles par défaut (defaultFont), on applique ces valeurs aux sliders
-*/
+/* activities list rendering */
 function renderActivityList(){
   activityList.innerHTML = '';
   const cat = categorySelect.value;
   let list = [];
   if(cat === 'raid') list = RAID_DATA;
   else if(cat === 'donjon') list = DONJON_DATA;
-  
   else if(cat === 'libre') {
     activityList.innerHTML = '<div class="activity-item">Aucune sélection nécessaire</div>';
     currentSelectedActivity = { name: "Activité libre", color: "#ffffff", custom:false };
     return;
   }
-
   if(cat === 'custom'){
     const wrap = document.createElement('div');
     wrap.className = 'activity-item';
     wrap.textContent = 'Cliquer pour saisir une activité personnalisée';
     wrap.addEventListener('click', ()=>{
       const name = prompt("Nom de l'activité personnalisée :","Nouvelle activité") || "Activité personnalisée";
-      const color = "#ffffff";
-      currentSelectedActivity = { name, color, custom:true };
+      currentSelectedActivity = { name, color: "#ffffff", custom:true };
       highlightSelected();
     });
     activityList.appendChild(wrap);
     return;
   }
-
   list.forEach(a=>{
     const it = document.createElement('div'); it.className='activity-item';
     it.innerHTML = `<div>${a.name}</div><div style="width:18px;height:18px;background:${a.color};"></div>`;
     it.addEventListener('click', ()=>{
-      // current selection includes default font sizes if available
       const fonts = a.defaultFont ? { ...a.defaultFont } : undefined;
       currentSelectedActivity = { name:a.name, color:a.color, custom:false, defaultFont: fonts };
       nameColorPicker.value = a.color;
-      // If predefined fonts exist, apply them to sliders for quick setup
       if(fonts){
         activityFontRange.value = fonts.activity || getDefaultActivityFont();
         tagFontRange.value = fonts.tag || getDefaultTagFont();
@@ -773,15 +511,13 @@ function highlightSelected(){
   if(idx>=0) items[idx].style.background = 'rgba(255,255,255,0.1)';
 }
 
-/* ouvrir modal */
+/* modal state */
 let state = {};
 let currentKey = null;
 let currentSelectedActivity = null;
-
-/* backups pour restaurer preview si annulation */
 const previewBackup = {};
 
-/* defaults for font sizes (from CSS variables) */
+/* defaults for font sizes */
 function getDefaultActivityFont() {
   const v = getComputedStyle(document.documentElement).getPropertyValue('--font-activity').trim();
   return parseInt(v) || 28;
@@ -791,7 +527,7 @@ function getDefaultTagFont() {
   return parseInt(v) || 20;
 }
 
-/* default rules including the two new special activities */
+/* default rules */
 const DEFAULT_RULES = {
   roulette: "Chaque joueur aura droit à 3 tirages, ce qui déterminera l'arme qu'il devra garder tout le long du raid. Les tirages ne sont pas rétroactifs, alors choisissez bien.",
   special: "Composition d'une majorité de joueurs expérimentés, afin de prendre le temps pour l'apprentissage d'activités considérées difficiles.",
@@ -799,6 +535,7 @@ const DEFAULT_RULES = {
   chill: "Pour tracé"
 };
 
+/* open modal */
 function openModalForKey(key){
   currentKey = key;
   const s = state[key];
@@ -836,7 +573,6 @@ function openModalForKey(key){
   renderActivityList();
   highlightSelected();
 
-  // préparer sliders: si la case a des tailles sauvegardées => use them, sinon fallback aux variables CSS
   const defaultActivityFont = getDefaultActivityFont();
   const defaultTagFont = getDefaultTagFont();
 
@@ -848,12 +584,10 @@ function openModalForKey(key){
   tagFontRange.value = savedTagFont;
   tagFontValue.textContent = savedTagFont + 'px';
 
-  // preview: modify the clicked slot only (live preview)
   const [day,hour] = key.split('-');
   const slotSelector = `.slot[data-day="${day}"][data-hour="${hour}"]`;
   const slotEl = document.querySelector(slotSelector);
   if(slotEl){
-    // save backup for cancel
     const nameEl = slotEl.querySelector('.activity-name');
     const tagEl = slotEl.querySelector('.tag');
     previewBackup[key] = {
@@ -861,7 +595,6 @@ function openModalForKey(key){
       tagFont: tagEl ? (tagEl.style.fontSize || '') : '',
       tagExists: !!tagEl
     };
-    // apply preview sizes
     if(nameEl) nameEl.style.fontSize = savedActivityFont + 'px';
     if(tagEl) tagEl.style.fontSize = savedTagFont + 'px';
   }
@@ -869,7 +602,7 @@ function openModalForKey(key){
   modalBack.style.display = 'flex';
 }
 
-/* click slots */
+/* click slots (delegation would be fine - keep original style) */
 document.querySelectorAll('.slot').forEach(slot=>{
   slot.addEventListener('click', ()=>{
     const key = slot.dataset.day + '-' + slot.dataset.hour;
@@ -879,41 +612,56 @@ document.querySelectorAll('.slot').forEach(slot=>{
 
 /* modal events */
 categorySelect.addEventListener('change', ()=>{ currentSelectedActivity=null; renderActivityList(); });
+
 specialSelect.addEventListener('change', (e)=>{
   const v = e.target.value;
   if(v === 'custom'){ specialName.style.display='block'; specialName.focus(); }
   else { specialName.style.display='none'; specialName.value=''; }
+
   if(v === 'roulette'){
     tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--roulette-default').trim() || '#ffd400';
     tagHex.value = tagColorPicker.value;
     specialRules.value = DEFAULT_RULES.roulette;
+    return;
   }
   if(v === 'special'){
     tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--special-default').trim() || '#ff3b3b';
     tagHex.value = tagColorPicker.value;
     specialRules.value = DEFAULT_RULES.special;
+    return;
   }
   if(v === 'decouverte'){
     tagColorPicker.value = '#00c853';
     tagHex.value = tagColorPicker.value;
     specialRules.value = DEFAULT_RULES.decouverte;
+    return;
   }
   if(v === 'chill'){
     tagColorPicker.value = '#9c27b0';
     tagHex.value = tagColorPicker.value;
     specialRules.value = DEFAULT_RULES.chill;
+    return;
+  }
+  if(v === 'maitrise'){
+    // Maîtrise: no rules by design, set a distinct default color but do not add rules later.
+    tagColorPicker.value = '#9e9e9e';
+    tagHex.value = tagColorPicker.value;
+    specialRules.value = ''; // explicitly empty
+    return;
   }
   if(v === 'none'){
     specialRules.value = '';
+    return;
   }
 });
+
 tagColorPicker.addEventListener('input', ()=> tagHex.value = tagColorPicker.value);
 tagHex.addEventListener('input', ()=>{
   const v = tagHex.value.trim();
   if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) tagColorPicker.value = v;
 });
 
-/* slider live listeners (mise à jour du preview sur la case courante) */
+/* slider live listeners */
 function applyPreviewFontSizesToCurrentSlot(){
   if(!currentKey) return;
   const [day,hour] = currentKey.split('-');
@@ -940,7 +688,6 @@ tagFontRange.addEventListener('input', applyPreviewFontSizesToCurrentSlot);
 saveBtn.addEventListener('click', ()=>{
   if(!currentKey) return;
 
-  // activité principale
   let activity = null;
   if(categorySelect.value === 'custom'){
     if(currentSelectedActivity && currentSelectedActivity.custom){
@@ -951,7 +698,6 @@ saveBtn.addEventListener('click', ()=>{
     }
   }else{
     if(currentSelectedActivity){
-      // include defaultFont if present so it's easy to reuse
       activity = {...currentSelectedActivity, color:nameColorPicker.value};
     }else{
       const list = categorySelect.value === 'raid' ? RAID_DATA : DONJON_DATA;
@@ -960,26 +706,24 @@ saveBtn.addEventListener('click', ()=>{
     }
   }
 
-  // activité spéciale
   const type = specialSelect.value;
   let special = null;
   if(type !== 'none'){
     const name = type === 'custom'
       ? (specialName.value.trim() || 'Personnalisée')
-      : (type === 'roulette' ? 'Roulette' : (type === 'decouverte' ? 'Découverte' : (type === 'chill' ? 'CHILL' : 'Soirée spéciale')));
+      : (type === 'roulette' ? 'Roulette' : (type === 'decouverte' ? 'Découverte' : (type === 'chill' ? 'CHILL' : (type === 'maitrise' ? 'Maîtrise' : 'Soirée spéciale'))));
     let rules = specialRules.value.trim();
     if (!rules) {
       if (type === 'roulette') rules = DEFAULT_RULES.roulette;
       else if (type === 'special') rules = DEFAULT_RULES.special;
       else if (type === 'decouverte') rules = DEFAULT_RULES.decouverte;
       else if (type === 'chill') rules = DEFAULT_RULES.chill;
-      else rules = "";
+      else rules = ""; // includes maitrise and custom (custom may have text)
     }
     const color = tagColorPicker.value || '#ffffff';
     special = { type, name, rules, color };
   }
 
-  // font sizes (sauvegarde par case)
   const fontSizes = {
     activity: parseInt(activityFontRange.value),
     tag: parseInt(tagFontRange.value)
@@ -994,7 +738,6 @@ saveBtn.addEventListener('click', ()=>{
 
 /* cancel */
 cancelBtn.addEventListener('click', ()=>{
-  // restore preview backup if exists
   if(currentKey && previewBackup[currentKey]){
     const [day,hour] = currentKey.split('-');
     const slotSelector = `.slot[data-day="${day}"][data-hour="${hour}"]`;
@@ -1004,13 +747,10 @@ cancelBtn.addEventListener('click', ()=>{
       const tagEl = slotEl.querySelector('.tag');
       const b = previewBackup[currentKey];
       if(nameEl) nameEl.style.fontSize = b.nameFont || '';
-      if(tagEl) {
-        tagEl.style.fontSize = b.tagFont || '';
-      }
+      if(tagEl) tagEl.style.fontSize = b.tagFont || '';
     }
     delete previewBackup[currentKey];
   }
-
   modalBack.style.display='none';
   currentKey=null;
   currentSelectedActivity=null;
@@ -1033,19 +773,15 @@ function refreshGrid(){
       nameEl.textContent = s.activity.name;
       nameEl.style.color = s.activity.color || '#ffffff';
 
-      // apply font size if stored for this case, otherwise leave CSS variable default
       if(s.fontSizes && s.fontSizes.activity) nameEl.style.fontSize = s.fontSizes.activity + 'px';
-      else nameEl.style.fontSize = ''; // reset to CSS var
+      else nameEl.style.fontSize = '';
 
-      // bordure par défaut
       slot.style.border = `${borderW} solid rgba(255,255,255,0.4)`;
 
       if(s.special){
         const borderColor = s.special.color || '#ffffff';
-        // bordure = couleur du tag
         slot.style.border = `${borderW} solid ${borderColor}`;
 
-        // tag texte seul, Cinzel, couleur = borderColor
         const t = document.createElement('div');
         t.className = 'tag';
         t.textContent = s.special.name;
@@ -1053,7 +789,6 @@ function refreshGrid(){
         t.style.fontFamily = 'Cinzel, serif';
         t.style.background = 'transparent';
 
-        // apply stored tag font size or default
         if(s.fontSizes && s.fontSizes.tag) t.style.fontSize = s.fontSizes.tag + 'px';
 
         content.appendChild(t);
@@ -1062,69 +797,32 @@ function refreshGrid(){
       slot.classList.add('empty');
       nameEl.textContent = 'Vide';
       nameEl.style.color = '#ddd';
-      nameEl.style.fontSize = ''; // reset
+      nameEl.style.fontSize = '';
       slot.style.border = `${borderW} solid rgba(255,255,255,0.2)`;
     }
   });
   updateRules();
 }
 
-/* rules */
+/* rules: build list but exclude 'maitrise' type (no rules for it) */
 function updateRules(){
   const keys = Object.keys(state);
-
-  const rouletteKey = keys.find(k => state[k]?.special?.type === 'roulette');
-  const specialKey  = keys.find(k => state[k]?.special?.type === 'special');
-  const customKey   = keys.find(k => state[k]?.special?.type === 'custom');
-  const decKey      = keys.find(k => state[k]?.special?.type === 'decouverte');
-  const chillKey    = keys.find(k => state[k]?.special?.type === 'chill');
-
+  const seenTypes = new Set();
   const lines = [];
 
-  if(rouletteKey){
-    const s = state[rouletteKey].special;
-    lines.push({
-      title: 'Roulette',
-      text: s.rules || DEFAULT_RULES.roulette,
-      color: s.color || '#ffd400'
-    });
-  }
+  keys.forEach(k=>{
+    const s = state[k];
+    if(!s || !s.special) return;
+    const type = s.special.type;
+    if(!type || type === 'maitrise') return; // explicitly skip maitrise
+    if(seenTypes.has(type)) return; // show each special type once
+    seenTypes.add(type);
 
-  if(specialKey){
-    const s = state[specialKey].special;
-    lines.push({
-      title: 'Soirée spéciale',
-      text: s.rules || DEFAULT_RULES.special,
-      color: s.color || '#ff3b3b'
-    });
-  }
-
-  if(decKey){
-    const s = state[decKey].special;
-    lines.push({
-      title: s.name || 'Découverte',
-      text: s.rules || DEFAULT_RULES.decouverte,
-      color: s.color || '#00c853'
-    });
-  }
-
-  if(chillKey){
-    const s = state[chillKey].special;
-    lines.push({
-      title: s.name || 'CHILL',
-      text: s.rules || DEFAULT_RULES.chill,
-      color: s.color || '#9c27b0'
-    });
-  }
-
-  if(customKey){
-    const s = state[customKey].special;
-    lines.push({
-      title: s.name || 'Personnalisée',
-      text: s.rules || '',
-      color: s.color || '#ffffff'
-    });
-  }
+    const title = s.special.name || (type === 'roulette' ? 'Roulette' : type === 'special' ? 'Soirée spéciale' : type === 'decouverte' ? 'Découverte' : type === 'chill' ? 'CHILL' : 'Personnalisée');
+    const text = s.special.rules || DEFAULT_RULES[type] || '';
+    const color = s.special.color || '#ffffff';
+    lines.push({ title, text, color });
+  });
 
   if(!lines.length){
     rulesArea.style.display='none';
@@ -1132,9 +830,7 @@ function updateRules(){
   }else{
     rulesArea.style.display='flex';
     rulesContent.innerHTML = lines.map(l =>
-      `<div class="rule-line" style="color:${l.color}">
-         <strong>${l.title} :</strong> ${l.text}
-       </div>`
+      `<div class="rule-line" style="color:${l.color}"><strong>${l.title} :</strong> ${l.text}</div>`
     ).join('');
   }
 }
@@ -1146,14 +842,8 @@ resetBtn.addEventListener('click', ()=>{
   refreshGrid();
 });
 
-/* EXPORT PNG
-   - On inclut visuellement la topbar (début/fin) dans le canvas POUR L'EXPORT en déplaçant temporairement
-     le topbar dans le canvas avant capture, tout en masquant les boutons Export/Réinitialiser.
-   - Les offsets et la taille des dates sont contrôlables via les variables CSS :
-     --export-dates-font-size, --export-dates-offset-x, --export-dates-offset-y
-*/
+/* EXPORT PNG */
 exportPng.addEventListener('click', async () => {
-  // sauvegarde de l'état pour restauration
   const originalTopbarParent = topbar.parentNode;
   const originalTopbarNext = topbar.nextSibling;
   const originalTopbarStyle = {
@@ -1164,18 +854,15 @@ exportPng.addEventListener('click', async () => {
     zIndex: topbar.style.zIndex || ''
   };
 
-  // masquer uniquement les boutons qui ne doivent pas apparaître dans l'export
   const prevExportDisplay = exportPng.style.display || '';
   const prevResetDisplay = resetBtn.style.display || '';
   exportPng.style.display = 'none';
   resetBtn.style.display = 'none';
 
   try {
-    // appliquer capture-mode (masque les éléments indiqués via .canvas.capture)
     canvas.classList.add('capture');
     modalBack.style.display = 'none';
 
-    // sauvegarder et retirer transforms pour coordonnées réelles
     const prevWrapperTransform = canvasWrapper ? canvasWrapper.style.transform : '';
     const prevWrapperOrigin = canvasWrapper ? canvasWrapper.style.transformOrigin : '';
     const prevCanvasTransform = canvas.style.transform;
@@ -1188,19 +875,14 @@ exportPng.addEventListener('click', async () => {
     canvas.style.transform = 'none';
     canvas.style.transformOrigin = 'top left';
 
-    // petit délai pour recalcul des positions
     await new Promise(r => setTimeout(r, 50));
 
-    // mesurer positions
     const canvasRect = canvas.getBoundingClientRect();
     const topbarRect = topbar.getBoundingClientRect();
 
-    // déplacer topbar dans le canvas (position absolue relative au canvas)
-    // calculer gauche et top relatifs au canvas
     const relLeft = topbarRect.left - canvasRect.left + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--export-dates-offset-x')) || 0;
     const relTop  = topbarRect.top  - canvasRect.top  + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--export-dates-offset-y')) || 0;
 
-    // appliquer styles inline puis append
     topbar.style.position = 'absolute';
     topbar.style.left = relLeft + 'px';
     topbar.style.top = relTop + 'px';
@@ -1209,25 +891,19 @@ exportPng.addEventListener('click', async () => {
 
     canvas.appendChild(topbar);
 
-    // ajouter styles temporaires pour le look des dates (on augmente la taille si souhaité)
     const cssTmp = document.createElement('style');
     cssTmp.id = 'export-dates-temp-style';
     cssTmp.textContent = `
       #topbar .date-block .value { font-size: var(--export-dates-font-size) !important; }
-      /* assurer que les petits labels ne passent pas en overflow */
       #topbar .date-block .label { font-size: 14px !important; opacity: .9; }
-      /* masquer explicitement les boutons si un navigateur ignore le style inline précédent */
       #topbar .btn-primary, #topbar .btn-ghost { display:none !important; }
     `;
     canvas.appendChild(cssTmp);
 
-    // attendre un court instant pour que le DOM mette à jour
     await new Promise(r => setTimeout(r, 80));
 
-    // capture à haute résolution
     const img = await html2canvas(canvas, { scale: 2, useCORS: true, backgroundColor: null });
 
-    // restaurer transforms
     if (canvasWrapper) {
       canvasWrapper.style.transform = prevWrapperTransform;
       canvasWrapper.style.transformOrigin = prevWrapperOrigin;
@@ -1235,22 +911,18 @@ exportPng.addEventListener('click', async () => {
     canvas.style.transform = prevCanvasTransform;
     canvas.style.transformOrigin = prevCanvasOrigin;
 
-    // restaurer topbar à son parent d'origine
     if (originalTopbarNext) originalTopbarParent.insertBefore(topbar, originalTopbarNext);
     else originalTopbarParent.appendChild(topbar);
 
-    // restaurer styles inline
     topbar.style.position = originalTopbarStyle.position;
     topbar.style.left = originalTopbarStyle.left;
     topbar.style.top = originalTopbarStyle.top;
     topbar.style.width = originalTopbarStyle.width;
     topbar.style.zIndex = originalTopbarStyle.zIndex;
 
-    // retirer CSS temporaire
     const cssEl = document.getElementById('export-dates-temp-style');
     if(cssEl) cssEl.remove();
 
-    // créer nom de fichier
     function safeDateForFilename(inputValue, displayText) {
       if (inputValue) {
         const parts = inputValue.split('-');
@@ -1262,7 +934,6 @@ exportPng.addEventListener('click', async () => {
     const endSafe = safeDateForFilename(inputEnd.value, displayEnd.textContent);
     const filename = `planning-${startSafe}_${endSafe}.png`;
 
-    // télécharger
     const a = document.createElement('a');
     a.href = img.toDataURL('image/png');
     a.download = filename;
@@ -1271,7 +942,6 @@ exportPng.addEventListener('click', async () => {
   } catch (err) {
     alert('Erreur PNG : ' + (err && err.message ? err.message : err));
   } finally {
-    // restauration UI et états
     canvas.classList.remove('capture');
     modalBack.style.display = 'none';
     exportPng.style.display = prevExportDisplay;
@@ -1279,21 +949,11 @@ exportPng.addEventListener('click', async () => {
   }
 });
 
-/* date pickers: ouvrir input[type=date] via bouton et mettre à jour l'affichage */
-displayStart.addEventListener('click', ()=> {
-  inputStart.focus();
-  inputStart.click();
-});
-displayEnd.addEventListener('click', ()=> {
-  inputEnd.focus();
-  inputEnd.click();
-});
-inputStart.addEventListener('change', (e)=>{
-  displayStart.textContent = formatShortDate(e.target.value);
-});
-inputEnd.addEventListener('change', (e)=>{
-  displayEnd.textContent = formatShortDate(e.target.value);
-});
+/* date pickers: open via button and update display */
+displayStart.addEventListener('click', ()=> { inputStart.focus(); inputStart.click(); });
+displayEnd.addEventListener('click', ()=> { inputEnd.focus(); inputEnd.click(); });
+inputStart.addEventListener('change', (e)=>{ displayStart.textContent = formatShortDate(e.target.value); });
+inputEnd.addEventListener('change', (e)=>{ displayEnd.textContent = formatShortDate(e.target.value); });
 
 /* init */
 (function init(){
@@ -1303,18 +963,13 @@ inputEnd.addEventListener('change', (e)=>{
   function applyScale(){
     const canvasW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-w')) || 1536;
     const canvasH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-h')) || 1024;
-
     const scaleX = (window.innerWidth - 40) / canvasW;
     const scaleY = (window.innerHeight - 40) / canvasH;
-
     const scale = Math.min(scaleX, scaleY, 1);
-
-    // on scale le wrapper (pas le canvas directement) pour que la topbar (hors du canvas) ne soit pas affectée
     if (canvasWrapper) {
       canvasWrapper.style.transform = 'scale(' + scale + ')';
       canvasWrapper.style.transformOrigin = 'top left';
     } else {
-      // fallback si wrapper manquant
       canvas.style.transform = 'scale(' + scale + ')';
       canvas.style.transformOrigin = 'top left';
     }
@@ -1322,21 +977,16 @@ inputEnd.addEventListener('change', (e)=>{
   applyScale();
   window.addEventListener('resize', applyScale);
 
-  // initialiser sliders par défaut (valeurs depuis CSS vars)
   activityFontRange.value = getDefaultActivityFont();
   activityFontValue.textContent = activityFontRange.value + 'px';
   tagFontRange.value = getDefaultTagFont();
   tagFontValue.textContent = tagFontRange.value + 'px';
 })();
 
-/* API utilitaire : changer layout depuis la console
-   Exemple:
-     setLayout({ topbar:{left:100,top:20}, grid:{left:10,top:150}, offsets:{ displayStart:{x:10,y:0} } })
-*/
+/* expose setLayout */
 window.setLayout = function(newLayout){
   Object.assign(layout, newLayout);
   applyLayoutFromObject(layout);
-  // keep inline positions for legacy code
   if (newLayout.topbar) {
     topbar.style.left = (newLayout.topbar.left ?? layout.topbar.left) + 'px';
     topbar.style.top = (newLayout.topbar.top ?? layout.topbar.top) + 'px';
