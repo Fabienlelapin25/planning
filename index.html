@@ -66,7 +66,8 @@ html,body{
   padding:12px;
 }
 .canvas-wrapper { position: relative; width: var(--canvas-w); height: var(--canvas-h); transform-origin: top left; }
-.canvas{ width:var(--canvas-w);height:var(--canvas-h); position:relative; background-image:url('https://i.imgur.com/Slf8Flb.png'); background-size:contain; background-repeat:no-repeat; background-position:center; background-color:#000; border-radius:0; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.6); }
+/* utilise le logo.png du repo (chemin relatif) */
+.canvas{ width:var(--canvas-w);height:var(--canvas-h); position:relative; background-image:url('./logo.png'); background-size:contain; background-repeat:no-repeat; background-position:center; background-color:#000; border-radius:0; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.6); }
 
 /* topbar */
 .topbar{ z-index: 9999; pointer-events: auto; position: absolute; left: var(--topbar-left); top: var(--topbar-top); width: auto; display: flex; align-items: center; justify-content: center; padding: 12px 0; }
@@ -307,7 +308,7 @@ const layout = {
   }
 };
 
-/* RAID / DONJON data - added new raid properly (comma included) */
+/* RAID / DONJON data */
 const RAID_DATA = [
   {name:"Désert Perpétuel", color:"#7B1FA2", defaultFont:{activity:30, tag:22}},
   {name:"Serment du Disciple", color:"#2E003E", defaultFont:{activity:28, tag:20}},
@@ -334,7 +335,7 @@ const DONJON_DATA = [
   {name:"Prophétie", color:"#2C2C54", defaultFont:{activity:28, tag:20}}
 ].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
 
-/* DOM refs */
+/* DOM refs (sûr car script inclus en fin de body) */
 const root = document.documentElement;
 const canvas = document.getElementById('canvas');
 const canvasWrapper = document.getElementById('canvasWrapper');
@@ -368,6 +369,13 @@ const activityFontValue = document.getElementById('activityFontValue');
 const tagFontRange = document.getElementById('tagFontRange');
 const tagFontValue = document.getElementById('tagFontValue');
 
+/* small helpers */
+function cssNumber(varName){
+  const v = getComputedStyle(document.documentElement).getPropertyValue(varName);
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
 /* apply layout */
 function applyLayoutFromObject(l){
   if (!l) return;
@@ -399,15 +407,15 @@ function applyLayoutFromObject(l){
 /* wrapper applyLayout */
 function applyLayout(){
   applyLayoutFromObject(layout);
-  if (layout.topbar) {
+  if (layout.topbar && topbar) {
     topbar.style.left = layout.topbar.left + 'px';
     topbar.style.top = layout.topbar.top + 'px';
   }
-  if (layout.grid) {
+  if (layout.grid && gridWrap) {
     gridWrap.style.left = layout.grid.left + 'px';
     gridWrap.style.top = layout.grid.top + 'px';
   }
-  if (layout.rules) {
+  if (layout.rules && rulesArea) {
     rulesArea.style.left = layout.rules.left + 'px';
     rulesArea.style.top = layout.rules.top + 'px';
   }
@@ -417,21 +425,23 @@ function applyLayout(){
 function openDatePicker(input){
   if (!input) return;
   if (typeof input.showPicker === 'function') {
-    try { input.showPicker(); return; } catch(e){ }
+    try { input.showPicker(); return; } catch(e){ /* fallthrough */ }
   }
-  input.focus();
+  try { input.focus(); } catch(e){}
   setTimeout(()=> {
-    try { input.click(); } catch(e){ }
+    try { input.click(); } catch(e){}
   }, 10);
 }
 
-displayStart.addEventListener('click', ()=> openDatePicker(inputStart));
-displayEnd.addEventListener('click',   ()=> openDatePicker(inputEnd));
+/* Dates pickers: single event handlers (plus util openDatePicker) */
+if (displayStart) displayStart.addEventListener('click', ()=> openDatePicker(inputStart));
+if (displayEnd) displayEnd.addEventListener('click', ()=> openDatePicker(inputEnd));
 
 /* dates init & helpers */
 function formatShortDate(d){
   if(!d) return '—';
   const dt = new Date(d);
+  if (isNaN(dt.getTime())) return '—';
   return dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});
 }
 (function initDates(){
@@ -441,11 +451,11 @@ function formatShortDate(d){
   const start = new Date(today); start.setDate(today.getDate() + diffToMonday);
   const end = new Date(start); end.setDate(start.getDate() + 5);
 
-  inputStart.value = start.toISOString().slice(0,10);
-  inputEnd.value = end.toISOString().slice(0,10);
+  if (inputStart) inputStart.value = start.toISOString().slice(0,10);
+  if (inputEnd) inputEnd.value = end.toISOString().slice(0,10);
 
-  displayStart.textContent = formatShortDate(inputStart.value);
-  displayEnd.textContent = formatShortDate(inputEnd.value);
+  if (displayStart) displayStart.textContent = formatShortDate(inputStart.value);
+  if (displayEnd) displayEnd.textContent = formatShortDate(inputEnd.value);
 })();
 
 /* palettes */
@@ -453,19 +463,20 @@ const QUICK_COLORS = ['#ffd400','#ff3b3b','#00c853','#1e88e5','#9c27b0'];
 function buildPalettes(){
   QUICK_COLORS.forEach(c=>{
     const s1 = document.createElement('div'); s1.className='color-swatch'; s1.style.background=c;
-    s1.addEventListener('click', ()=> nameColorPicker.value = c);
-    namePalette.appendChild(s1);
+    s1.addEventListener('click', ()=> { if(nameColorPicker) nameColorPicker.value = c; });
+    if (namePalette) namePalette.appendChild(s1);
     const s2 = document.createElement('div'); s2.className='color-swatch'; s2.style.background=c;
-    s2.addEventListener('click', ()=> { tagColorPicker.value = c; tagHex.value = c; });
-    tagPalette.appendChild(s2);
+    s2.addEventListener('click', ()=> { if(tagColorPicker) { tagColorPicker.value = c; tagHex.value = c; }});
+    if (tagPalette) tagPalette.appendChild(s2);
   });
 }
 buildPalettes();
 
 /* activities list rendering */
 function renderActivityList(){
+  if(!activityList) return;
   activityList.innerHTML = '';
-  const cat = categorySelect.value;
+  const cat = categorySelect ? categorySelect.value : 'raid';
   let list = [];
   if(cat === 'raid') list = RAID_DATA;
   else if(cat === 'donjon') list = DONJON_DATA;
@@ -492,10 +503,10 @@ function renderActivityList(){
     it.addEventListener('click', ()=>{
       const fonts = a.defaultFont ? { ...a.defaultFont } : undefined;
       currentSelectedActivity = { name:a.name, color:a.color, custom:false, defaultFont: fonts };
-      nameColorPicker.value = a.color;
+      if (nameColorPicker) nameColorPicker.value = a.color;
       if(fonts){
-        activityFontRange.value = fonts.activity || getDefaultActivityFont();
-        tagFontRange.value = fonts.tag || getDefaultTagFont();
+        if (activityFontRange) activityFontRange.value = fonts.activity || getDefaultActivityFont();
+        if (tagFontRange) tagFontRange.value = fonts.tag || getDefaultTagFont();
         applyPreviewFontSizesToCurrentSlot();
       }
       highlightSelected();
@@ -504,6 +515,7 @@ function renderActivityList(){
   });
 }
 function highlightSelected(){
+  if(!activityList) return;
   Array.from(activityList.children).forEach(ch=> ch.style.background='transparent');
   if(!currentSelectedActivity) return;
   const items = Array.from(activityList.children);
@@ -520,11 +532,11 @@ const previewBackup = {};
 /* defaults for font sizes */
 function getDefaultActivityFont() {
   const v = getComputedStyle(document.documentElement).getPropertyValue('--font-activity').trim();
-  return parseInt(v) || 28;
+  return parseInt(v, 10) || 28;
 }
 function getDefaultTagFont() {
   const v = getComputedStyle(document.documentElement).getPropertyValue('--font-tag').trim();
-  return parseInt(v) || 20;
+  return parseInt(v, 10) || 20;
 }
 
 /* default rules */
@@ -532,7 +544,7 @@ const DEFAULT_RULES = {
   roulette: "Chaque joueur aura droit à 3 tirages, ce qui déterminera l'arme qu'il devra garder tout le long du raid. Les tirages ne sont pas rétroactifs, alors choisissez bien.",
   special: "Composition d'une majorité de joueurs expérimentés, afin de prendre le temps pour l'apprentissage d'activités considérées difficiles.",
   decouverte: "Que vous soyez expérimenté ou non, c'est ouvert à tous.",
-  chill: "Pour tracé"
+  chill: "Relax et découverte" // texte clarifié
 };
 
 /* open modal */
@@ -540,34 +552,33 @@ function openModalForKey(key){
   currentKey = key;
   const s = state[key];
 
-  categorySelect.value = 'raid';
-  specialSelect.value = 'none';
-  specialName.style.display = 'none';
-  specialName.value = '';
-  specialRules.value = '';
-  nameColorPicker.value = '#ffffff';
-  tagColorPicker.value = '#ffd400';
-  tagHex.value = '#ffd400';
+  if (categorySelect) categorySelect.value = 'raid';
+  if (specialSelect) specialSelect.value = 'none';
+  if (specialName) { specialName.style.display = 'none'; specialName.value = ''; }
+  if (specialRules) specialRules.value = '';
+  if (nameColorPicker) nameColorPicker.value = '#ffffff';
+  if (tagColorPicker) tagColorPicker.value = '#ffd400';
+  if (tagHex) tagHex.value = '#ffd400';
   currentSelectedActivity = null;
 
   if(s && s.activity){
     const inRaid = RAID_DATA.find(r=>r.name===s.activity.name);
     const inDonjon = DONJON_DATA.find(d=>d.name===s.activity.name);
-    if(inRaid) categorySelect.value = 'raid';
-    else if(inDonjon) categorySelect.value = 'donjon';
-    else categorySelect.value = 'custom';
+    if(inRaid && categorySelect) categorySelect.value = 'raid';
+    else if(inDonjon && categorySelect) categorySelect.value = 'donjon';
+    else if(categorySelect) categorySelect.value = 'custom';
     currentSelectedActivity = {...s.activity};
-    nameColorPicker.value = s.activity.color || '#ffffff';
+    if (nameColorPicker) nameColorPicker.value = s.activity.color || '#ffffff';
   }
   if(s && s.special){
-    specialSelect.value = s.special.type || 'none';
-    if(s.special.type === 'custom'){
+    if (specialSelect) specialSelect.value = s.special.type || 'none';
+    if(s.special.type === 'custom' && specialName){
       specialName.style.display='block';
       specialName.value = s.special.name || '';
     }
-    specialRules.value = s.special.rules || '';
-    tagColorPicker.value = s.special.color || '#ffd400';
-    tagHex.value = s.special.color || '#ffd400';
+    if (specialRules) specialRules.value = s.special.rules || '';
+    if (tagColorPicker) tagColorPicker.value = s.special.color || '#ffd400';
+    if (tagHex) tagHex.value = s.special.color || '#ffd400';
   }
 
   renderActivityList();
@@ -579,10 +590,10 @@ function openModalForKey(key){
   const savedActivityFont = s?.fontSizes?.activity ?? defaultActivityFont;
   const savedTagFont = s?.fontSizes?.tag ?? defaultTagFont;
 
-  activityFontRange.value = savedActivityFont;
-  activityFontValue.textContent = savedActivityFont + 'px';
-  tagFontRange.value = savedTagFont;
-  tagFontValue.textContent = savedTagFont + 'px';
+  if (activityFontRange) activityFontRange.value = savedActivityFont;
+  if (activityFontValue) activityFontValue.textContent = savedActivityFont + 'px';
+  if (tagFontRange) tagFontRange.value = savedTagFont;
+  if (tagFontValue) tagFontValue.textContent = savedTagFont + 'px';
 
   const [day,hour] = key.split('-');
   const slotSelector = `.slot[data-day="${day}"][data-hour="${hour}"]`;
@@ -599,7 +610,7 @@ function openModalForKey(key){
     if(tagEl) tagEl.style.fontSize = savedTagFont + 'px';
   }
 
-  modalBack.style.display = 'flex';
+  if (modalBack) modalBack.style.display = 'flex';
 }
 
 /* click slots (delegation would be fine - keep original style) */
@@ -611,54 +622,55 @@ document.querySelectorAll('.slot').forEach(slot=>{
 });
 
 /* modal events */
-categorySelect.addEventListener('change', ()=>{ currentSelectedActivity=null; renderActivityList(); });
+if (categorySelect) categorySelect.addEventListener('change', ()=>{ currentSelectedActivity=null; renderActivityList(); });
 
-specialSelect.addEventListener('change', (e)=>{
+if (specialSelect) specialSelect.addEventListener('change', (e)=>{
   const v = e.target.value;
-  if(v === 'custom'){ specialName.style.display='block'; specialName.focus(); }
-  else { specialName.style.display='none'; specialName.value=''; }
+  if(v === 'custom' && specialName){ specialName.style.display='block'; specialName.focus(); }
+  else if (specialName) { specialName.style.display='none'; specialName.value=''; }
 
   if(v === 'roulette'){
-    tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--roulette-default').trim() || '#ffd400';
-    tagHex.value = tagColorPicker.value;
-    specialRules.value = DEFAULT_RULES.roulette;
+    const col = getComputedStyle(document.documentElement).getPropertyValue('--roulette-default').trim() || '#ffd400';
+    if(tagColorPicker) tagColorPicker.value = col;
+    if(tagHex) tagHex.value = col;
+    if(specialRules) specialRules.value = DEFAULT_RULES.roulette;
     return;
   }
   if(v === 'special'){
-    tagColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--special-default').trim() || '#ff3b3b';
-    tagHex.value = tagColorPicker.value;
-    specialRules.value = DEFAULT_RULES.special;
+    const col = getComputedStyle(document.documentElement).getPropertyValue('--special-default').trim() || '#ff3b3b';
+    if(tagColorPicker) tagColorPicker.value = col;
+    if(tagHex) tagHex.value = col;
+    if(specialRules) specialRules.value = DEFAULT_RULES.special;
     return;
   }
   if(v === 'decouverte'){
-    tagColorPicker.value = '#00c853';
-    tagHex.value = tagColorPicker.value;
-    specialRules.value = DEFAULT_RULES.decouverte;
+    if(tagColorPicker) tagColorPicker.value = '#00c853';
+    if(tagHex) tagHex.value = '#00c853';
+    if(specialRules) specialRules.value = DEFAULT_RULES.decouverte;
     return;
   }
   if(v === 'chill'){
-    tagColorPicker.value = '#9c27b0';
-    tagHex.value = tagColorPicker.value;
-    specialRules.value = DEFAULT_RULES.chill;
+    if(tagColorPicker) tagColorPicker.value = '#9c27b0';
+    if(tagHex) tagHex.value = '#9c27b0';
+    if(specialRules) specialRules.value = DEFAULT_RULES.chill;
     return;
   }
   if(v === 'maitrise'){
-    // Maîtrise: no rules by design, set a distinct default color but do not add rules later.
-    tagColorPicker.value = '#9e9e9e';
-    tagHex.value = tagColorPicker.value;
-    specialRules.value = ''; // explicitly empty
+    if(tagColorPicker) tagColorPicker.value = '#9e9e9e';
+    if(tagHex) tagHex.value = '#9e9e9e';
+    if(specialRules) specialRules.value = '';
     return;
   }
   if(v === 'none'){
-    specialRules.value = '';
+    if(specialRules) specialRules.value = '';
     return;
   }
 });
 
-tagColorPicker.addEventListener('input', ()=> tagHex.value = tagColorPicker.value);
-tagHex.addEventListener('input', ()=>{
+if (tagColorPicker) tagColorPicker.addEventListener('input', ()=> { if(tagHex) tagHex.value = tagColorPicker.value; });
+if (tagHex) tagHex.addEventListener('input', ()=>{
   const v = tagHex.value.trim();
-  if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) tagColorPicker.value = v;
+  if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v) && tagColorPicker) tagColorPicker.value = v;
 });
 
 /* slider live listeners */
@@ -671,73 +683,73 @@ function applyPreviewFontSizesToCurrentSlot(){
   const nameEl = slotEl.querySelector('.activity-name');
   const tagEl = slotEl.querySelector('.tag');
 
-  const aSize = parseInt(activityFontRange.value);
-  const tSize = parseInt(tagFontRange.value);
+  const aSize = activityFontRange ? parseInt(activityFontRange.value, 10) : getDefaultActivityFont();
+  const tSize = tagFontRange ? parseInt(tagFontRange.value, 10) : getDefaultTagFont();
 
   if(nameEl) nameEl.style.fontSize = aSize + 'px';
   if(tagEl) tagEl.style.fontSize = tSize + 'px';
 
-  activityFontValue.textContent = aSize + 'px';
-  tagFontValue.textContent = tSize + 'px';
+  if (activityFontValue) activityFontValue.textContent = aSize + 'px';
+  if (tagFontValue) tagFontValue.textContent = tSize + 'px';
 }
 
-activityFontRange.addEventListener('input', applyPreviewFontSizesToCurrentSlot);
-tagFontRange.addEventListener('input', applyPreviewFontSizesToCurrentSlot);
+if (activityFontRange) activityFontRange.addEventListener('input', applyPreviewFontSizesToCurrentSlot);
+if (tagFontRange) tagFontRange.addEventListener('input', applyPreviewFontSizesToCurrentSlot);
 
 /* save */
-saveBtn.addEventListener('click', ()=>{
+if (saveBtn) saveBtn.addEventListener('click', ()=>{
   if(!currentKey) return;
 
   let activity = null;
-  if(categorySelect.value === 'custom'){
+  if(categorySelect && categorySelect.value === 'custom'){
     if(currentSelectedActivity && currentSelectedActivity.custom){
-      activity = {...currentSelectedActivity, color:nameColorPicker.value};
+      activity = {...currentSelectedActivity, color: nameColorPicker ? nameColorPicker.value : '#ffffff'};
     }else{
       const name = prompt("Nom de l'activité personnalisée :","Activité") || "Activité";
-      activity = { name, color:nameColorPicker.value };
+      activity = { name, color: nameColorPicker ? nameColorPicker.value : '#ffffff' };
     }
   }else{
     if(currentSelectedActivity){
-      activity = {...currentSelectedActivity, color:nameColorPicker.value};
+      activity = {...currentSelectedActivity, color: nameColorPicker ? nameColorPicker.value : '#ffffff'};
     }else{
-      const list = categorySelect.value === 'raid' ? RAID_DATA : DONJON_DATA;
+      const list = (categorySelect && categorySelect.value === 'raid') ? RAID_DATA : DONJON_DATA;
       const first = list[0];
       activity = { name:first.name, color:first.color, defaultFont:first.defaultFont };
     }
   }
 
-  const type = specialSelect.value;
+  const type = specialSelect ? specialSelect.value : 'none';
   let special = null;
   if(type !== 'none'){
     const name = type === 'custom'
-      ? (specialName.value.trim() || 'Personnalisée')
+      ? (specialName && specialName.value.trim() || 'Personnalisée')
       : (type === 'roulette' ? 'Roulette' : (type === 'decouverte' ? 'Découverte' : (type === 'chill' ? 'CHILL' : (type === 'maitrise' ? 'Maîtrise' : 'Soirée spéciale'))));
-    let rules = specialRules.value.trim();
+    let rules = specialRules ? specialRules.value.trim() : '';
     if (!rules) {
       if (type === 'roulette') rules = DEFAULT_RULES.roulette;
       else if (type === 'special') rules = DEFAULT_RULES.special;
       else if (type === 'decouverte') rules = DEFAULT_RULES.decouverte;
       else if (type === 'chill') rules = DEFAULT_RULES.chill;
-      else rules = ""; // includes maitrise and custom (custom may have text)
+      else rules = "";
     }
-    const color = tagColorPicker.value || '#ffffff';
+    const color = tagColorPicker ? tagColorPicker.value : '#ffffff';
     special = { type, name, rules, color };
   }
 
   const fontSizes = {
-    activity: parseInt(activityFontRange.value),
-    tag: parseInt(tagFontRange.value)
+    activity: activityFontRange ? parseInt(activityFontRange.value,10) : getDefaultActivityFont(),
+    tag: tagFontRange ? parseInt(tagFontRange.value,10) : getDefaultTagFont()
   };
 
   state[currentKey] = { activity, special, fontSizes };
-  modalBack.style.display = 'none';
+  if (modalBack) modalBack.style.display = 'none';
   currentKey = null;
   currentSelectedActivity = null;
   refreshGrid();
 });
 
 /* cancel */
-cancelBtn.addEventListener('click', ()=>{
+if (cancelBtn) cancelBtn.addEventListener('click', ()=>{
   if(currentKey && previewBackup[currentKey]){
     const [day,hour] = currentKey.split('-');
     const slotSelector = `.slot[data-day="${day}"][data-hour="${hour}"]`;
@@ -751,7 +763,7 @@ cancelBtn.addEventListener('click', ()=>{
     }
     delete previewBackup[currentKey];
   }
-  modalBack.style.display='none';
+  if (modalBack) modalBack.style.display='none';
   currentKey=null;
   currentSelectedActivity=null;
 });
@@ -766,15 +778,16 @@ function refreshGrid(){
     const existingTag = slot.querySelector('.tag');
     if(existingTag) existingTag.remove();
 
-    const borderW = getComputedStyle(document.documentElement).getPropertyValue('--border-w').trim() || '3px';
+    const borderWraw = getComputedStyle(document.documentElement).getPropertyValue('--border-w').trim();
+    const borderW = (parseInt(borderWraw,10) || 3) + 'px';
 
     if(s && s.activity){
       slot.classList.remove('empty');
-      nameEl.textContent = s.activity.name;
-      nameEl.style.color = s.activity.color || '#ffffff';
+      if(nameEl) nameEl.textContent = s.activity.name;
+      if(nameEl) nameEl.style.color = s.activity.color || '#ffffff';
 
-      if(s.fontSizes && s.fontSizes.activity) nameEl.style.fontSize = s.fontSizes.activity + 'px';
-      else nameEl.style.fontSize = '';
+      if(s.fontSizes && s.fontSizes.activity) { if(nameEl) nameEl.style.fontSize = s.fontSizes.activity + 'px'; }
+      else if (nameEl) nameEl.style.fontSize = '';
 
       slot.style.border = `${borderW} solid rgba(255,255,255,0.4)`;
 
@@ -791,13 +804,13 @@ function refreshGrid(){
 
         if(s.fontSizes && s.fontSizes.tag) t.style.fontSize = s.fontSizes.tag + 'px';
 
-        content.appendChild(t);
+        if (content) content.appendChild(t);
       }
     }else{
       slot.classList.add('empty');
-      nameEl.textContent = 'Vide';
-      nameEl.style.color = '#ddd';
-      nameEl.style.fontSize = '';
+      if(nameEl) nameEl.textContent = 'Vide';
+      if(nameEl) nameEl.style.color = '#ddd';
+      if(nameEl) nameEl.style.fontSize = '';
       slot.style.border = `${borderW} solid rgba(255,255,255,0.2)`;
     }
   });
@@ -825,25 +838,26 @@ function updateRules(){
   });
 
   if(!lines.length){
-    rulesArea.style.display='none';
-    rulesContent.innerHTML='';
+    if (rulesArea) rulesArea.style.display='none';
+    if (rulesContent) rulesContent.innerHTML='';
   }else{
-    rulesArea.style.display='flex';
-    rulesContent.innerHTML = lines.map(l =>
+    if (rulesArea) rulesArea.style.display='flex';
+    if (rulesContent) rulesContent.innerHTML = lines.map(l =>
       `<div class="rule-line" style="color:${l.color}"><strong>${l.title} :</strong> ${l.text}</div>`
     ).join('');
   }
 }
 
 /* reset */
-resetBtn.addEventListener('click', ()=>{
+if (resetBtn) resetBtn.addEventListener('click', ()=>{
   if(!confirm('Réinitialiser toutes les cases ?')) return;
   state = {};
   refreshGrid();
 });
 
 /* EXPORT PNG */
-exportPng.addEventListener('click', async () => {
+if (exportPng) exportPng.addEventListener('click', async () => {
+  if(!canvas || !topbar) return;
   const originalTopbarParent = topbar.parentNode;
   const originalTopbarNext = topbar.nextSibling;
   const originalTopbarStyle = {
@@ -855,13 +869,14 @@ exportPng.addEventListener('click', async () => {
   };
 
   const prevExportDisplay = exportPng.style.display || '';
-  const prevResetDisplay = resetBtn.style.display || '';
+  const prevResetDisplay = resetBtn ? resetBtn.style.display || '' : '';
+
   exportPng.style.display = 'none';
-  resetBtn.style.display = 'none';
+  if (resetBtn) resetBtn.style.display = 'none';
 
   try {
     canvas.classList.add('capture');
-    modalBack.style.display = 'none';
+    if (modalBack) modalBack.style.display = 'none';
 
     const prevWrapperTransform = canvasWrapper ? canvasWrapper.style.transform : '';
     const prevWrapperOrigin = canvasWrapper ? canvasWrapper.style.transformOrigin : '';
@@ -880,8 +895,8 @@ exportPng.addEventListener('click', async () => {
     const canvasRect = canvas.getBoundingClientRect();
     const topbarRect = topbar.getBoundingClientRect();
 
-    const relLeft = topbarRect.left - canvasRect.left + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--export-dates-offset-x')) || 0;
-    const relTop  = topbarRect.top  - canvasRect.top  + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--export-dates-offset-y')) || 0;
+    const relLeft = (topbarRect.left - canvasRect.left) + cssNumber('--export-dates-offset-x');
+    const relTop  = (topbarRect.top  - canvasRect.top)  + cssNumber('--export-dates-offset-y');
 
     topbar.style.position = 'absolute';
     topbar.style.left = relLeft + 'px';
@@ -928,10 +943,10 @@ exportPng.addEventListener('click', async () => {
         const parts = inputValue.split('-');
         if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
       }
-      return displayText.replace(/\s+/g, '_').replace(/[\/\\:]/g, '-');
+      return (displayText || '').replace(/\s+/g, '_').replace(/[\/\\:]/g, '-');
     }
-    const startSafe = safeDateForFilename(inputStart.value, displayStart.textContent);
-    const endSafe = safeDateForFilename(inputEnd.value, displayEnd.textContent);
+    const startSafe = safeDateForFilename(inputStart ? inputStart.value : '', displayStart ? displayStart.textContent : '');
+    const endSafe = safeDateForFilename(inputEnd ? inputEnd.value : '', displayEnd ? displayEnd.textContent : '');
     const filename = `planning-${startSafe}_${endSafe}.png`;
 
     const a = document.createElement('a');
@@ -943,17 +958,15 @@ exportPng.addEventListener('click', async () => {
     alert('Erreur PNG : ' + (err && err.message ? err.message : err));
   } finally {
     canvas.classList.remove('capture');
-    modalBack.style.display = 'none';
+    if (modalBack) modalBack.style.display = 'none';
     exportPng.style.display = prevExportDisplay;
-    resetBtn.style.display = prevResetDisplay;
+    if (resetBtn) resetBtn.style.display = prevResetDisplay;
   }
 });
 
-/* date pickers: open via button and update display */
-displayStart.addEventListener('click', ()=> { inputStart.focus(); inputStart.click(); });
-displayEnd.addEventListener('click', ()=> { inputEnd.focus(); inputEnd.click(); });
-inputStart.addEventListener('change', (e)=>{ displayStart.textContent = formatShortDate(e.target.value); });
-inputEnd.addEventListener('change', (e)=>{ displayEnd.textContent = formatShortDate(e.target.value); });
+/* date pickers: update display on change */
+if (inputStart) inputStart.addEventListener('change', (e)=>{ if (displayStart) displayStart.textContent = formatShortDate(e.target.value); });
+if (inputEnd) inputEnd.addEventListener('change', (e)=>{ if (displayEnd) displayEnd.textContent = formatShortDate(e.target.value); });
 
 /* init */
 (function init(){
@@ -961,15 +974,15 @@ inputEnd.addEventListener('change', (e)=>{ displayEnd.textContent = formatShortD
   renderActivityList();
   refreshGrid();
   function applyScale(){
-    const canvasW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-w')) || 1536;
-    const canvasH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-h')) || 1024;
+    const canvasW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-w'),10) || 1536;
+    const canvasH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-h'),10) || 1024;
     const scaleX = (window.innerWidth - 40) / canvasW;
     const scaleY = (window.innerHeight - 40) / canvasH;
     const scale = Math.min(scaleX, scaleY, 1);
     if (canvasWrapper) {
       canvasWrapper.style.transform = 'scale(' + scale + ')';
       canvasWrapper.style.transformOrigin = 'top left';
-    } else {
+    } else if (canvas) {
       canvas.style.transform = 'scale(' + scale + ')';
       canvas.style.transformOrigin = 'top left';
     }
@@ -977,29 +990,46 @@ inputEnd.addEventListener('change', (e)=>{ displayEnd.textContent = formatShortD
   applyScale();
   window.addEventListener('resize', applyScale);
 
-  activityFontRange.value = getDefaultActivityFont();
-  activityFontValue.textContent = activityFontRange.value + 'px';
-  tagFontRange.value = getDefaultTagFont();
-  tagFontValue.textContent = tagFontRange.value + 'px';
+  if (activityFontRange) activityFontRange.value = getDefaultActivityFont();
+  if (activityFontValue) activityFontValue.textContent = (activityFontRange ? activityFontRange.value : getDefaultActivityFont()) + 'px';
+  if (tagFontRange) tagFontRange.value = getDefaultTagFont();
+  if (tagFontValue) tagFontValue.textContent = (tagFontRange ? tagFontRange.value : getDefaultTagFont()) + 'px';
 })();
 
 /* expose setLayout */
 window.setLayout = function(newLayout){
   Object.assign(layout, newLayout);
   applyLayoutFromObject(layout);
-  if (newLayout.topbar) {
+  if (newLayout.topbar && topbar) {
     topbar.style.left = (newLayout.topbar.left ?? layout.topbar.left) + 'px';
     topbar.style.top = (newLayout.topbar.top ?? layout.topbar.top) + 'px';
   }
-  if (newLayout.grid) {
+  if (newLayout.grid && gridWrap) {
     gridWrap.style.left = (newLayout.grid.left ?? layout.grid.left) + 'px';
     gridWrap.style.top = (newLayout.grid.top ?? layout.grid.top) + 'px';
   }
-  if (newLayout.rules) {
+  if (newLayout.rules && rulesArea) {
     rulesArea.style.left = (newLayout.rules.left ?? layout.rules.left) + 'px';
     rulesArea.style.top = (newLayout.rules.top ?? layout.rules.top) + 'px';
   }
 };
+
+/* Vérifie la présence du logo.png et désactive l'image de fond si introuvable
+   (évite les problèmes lors de l'export si l'image renvoie 404) */
+(function checkLogoExists(){
+  try {
+    const img = new Image();
+    img.onload = function(){ /* tout va bien */ };
+    img.onerror = function(){
+      console.warn('logo.png introuvable — suppression de l\'image de fond.');
+      if (canvas) canvas.style.backgroundImage = 'none';
+    };
+    img.src = './logo.png';
+  } catch(e){
+    console.warn('Erreur lors de la vérification de logo.png', e);
+    if (canvas) canvas.style.backgroundImage = 'none';
+  }
+})();
 </script>
 </body>
 </html>
