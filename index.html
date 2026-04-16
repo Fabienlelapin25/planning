@@ -1,1035 +1,1252 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Planning V16 — Final (corrigé)</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-<style>
-/* =========================
-   VARIABLES DE POSITION (modifier ici en px)
-   ========================= */
-:root{
-  --canvas-w:1700px;
-  --canvas-h:1024px;
-  --grid-width:1450px;
-  --time-col-w:150px;
-  --slot-h:160px;
-  --slot-gap:12px;
-  --border-w:3px;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Les Forges Dans L'Honneur - Planning</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #c0c0c0;
+            --primary-dark: #9ca3af;
+            --primary-light: #e5e7eb;
+            --secondary: #fca5a5;
+            --accent: #ef4444;
+            --dark-bg: #0a0a0c;
+            --card-bg: #111113;
+            --border: rgba(192, 192, 192, 0.3);
+            --forge-glow: rgba(239, 68, 68, 0.15);
+            --smoke: rgba(0,0,0,0.4);
+            
+            --text-xs: clamp(10px, 3vw, 12px);
+            --text-sm: clamp(12px, 4vw, 14px);
+            --text-base: clamp(14px, 4.5vw, 16px);
+            --text-lg: clamp(18px, 5vw, 22px);
+            --text-xl: clamp(24px, 6vw, 32px);
+            --text-2xl: clamp(28px, 7vw, 38px);
+            
+            --slot-height: clamp(100px, 15vw, 160px);
+            --gap: clamp(8px, 2vw, 16px);
+            
+            --rule-roulette: #fbbf24;
+            --rule-special: #ef4444;
+            --rule-decouverte: #10b981;
+            --rule-chill: #8b5cf6;
+            --rule-maitrise: #6b7280;
+        }
 
-  --font-day:28px;
-  --font-time:36px;
-  --font-activity:28px;
-  --font-tag:24px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  --rules-font:20px;
-  --rules-label-font-size: 18px;
-  --rules-width: 1440px;
-  --rules-padding: 10px;
-  --rules-max-height: 220px;
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0c 0%, #1a1a1f 100%);
+            color: #e5e7eb;
+            min-height: 100vh;
+            padding: var(--gap);
+            position: relative;
+        }
 
-  --export-dates-font-size: 48px;
-  --export-dates-offset-x: -10px;
-  --export-dates-offset-y: 0px;
+        /* Effet de fumée rouge animée */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 40%, rgba(239, 68, 68, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 70%, rgba(239, 68, 68, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+            animation: smokeMove 20s ease-in-out infinite;
+        }
 
-  --default-tag-color:#ffffff;
-  --roulette-default:#ffd400;
-  --special-default:#ff3b3b;
+        @keyframes smokeMove {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
 
-  --topbar-left: 540px;
-  --topbar-top: 8px;
-  --grid-left: 45px;
-  --grid-top: 180px;
-  --rules-left: 210px;
-  --rules-top: 640px;
+        /* Texture métallique */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 2px,
+                rgba(192, 192, 192, 0.03) 2px,
+                rgba(192, 192, 192, 0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
 
-  --displayStart-offset-x: 0px;
-  --displayStart-offset-y: 0px;
-  --displayEnd-offset-x: 0px;
-  --displayEnd-offset-y: 0px;
-  --export-offset-x: 0px;
-  --export-offset-y: 0px;
-  --reset-offset-x: 0px;
-  --reset-offset-y: 0px;
-}
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(10, 10, 12, 0.85);
+            backdrop-filter: blur(2px);
+            border-radius: clamp(12px, 4vw, 24px);
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(192, 192, 192, 0.2);
+            position: relative;
+            z-index: 1;
+        }
 
-/* base */
-*{box-sizing:border-box}
-html,body{
-  height:100%;margin:0;
-  background:#000;
-  font-family:Inter,system-ui,Arial;
-  color:#fff;
-  display:flex;align-items:center;justify-content:center;
-  padding:12px;
-}
-.canvas-wrapper { position: relative; width: var(--canvas-w); height: var(--canvas-h); transform-origin: top left; }
-/* utilise le logo.png du repo (chemin relatif) */
-.canvas{ width:var(--canvas-w);height:var(--canvas-h); position:relative; background-image:url('./logo.png'); background-size:contain; background-repeat:no-repeat; background-position:center; background-color:#000; border-radius:0; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.6); }
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, #111113 0%, #0a0a0c 100%);
+            padding: clamp(16px, 4vw, 24px);
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
 
-/* topbar */
-.topbar{ z-index: 9999; pointer-events: auto; position: absolute; left: var(--topbar-left); top: var(--topbar-top); width: auto; display: flex; align-items: center; justify-content: center; padding: 30px 0; }
-.topbar-inner{ width: var(--grid-width); display: flex; align-items: center; gap: 18px; font-family: Cinzel, serif; box-sizing: border-box; }
-.date-block{ display: flex; flex-direction: column; gap: 4px; position: relative; }
-.date-block .label{ font-size: 12px; opacity: 0.9; }
-.date-block .value{ font-size: var(--font-day); font-weight: 700; }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), var(--accent), var(--primary), transparent);
+        }
 
-/* action buttons */
-.btn-primary, .btn-ghost{ padding: 8px 12px; border-radius: 0; border: none; cursor: pointer; font-weight: 800; }
-.btn-primary{ background: #1f6feb; color: #fff; transform: translate(var(--export-offset-x), var(--export-offset-y)); }
-.btn-ghost{ background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.4); transform: translate(var(--reset-offset-x), var(--reset-offset-y)); }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--gap);
+            margin-bottom: clamp(16px, 4vw, 24px);
+        }
 
-/* input date invisible */
-.date-input{ position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; border: none; background: transparent; pointer-events: auto; -webkit-appearance: none; appearance: none; }
-.date-btn{ position: relative; z-index: 2; background: transparent; border: none; color: inherit; font-family: "Cinzel", serif; font-weight: 700; font-size: var(--font-day); line-height: 1; cursor: pointer; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-#displayStart { transform: translate(var(--displayStart-offset-x), var(--displayStart-offset-y)); }
-#displayEnd   { transform: translate(var(--displayEnd-offset-x), var(--displayEnd-offset-y)); }
-.date-btn:focus{ outline: 2px solid rgba(255,255,255,0.12); }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
 
-/* grid */
-.grid-wrap{ position: absolute; left: var(--grid-left); top: var(--grid-top); width: var(--grid-width); display: flex; flex-direction: column; gap: 12px; }
-.grid-header{ display: grid; grid-template-columns: var(--time-col-w) repeat(6, 1fr); gap: 12px; align-items: center; }
-.grid-header .time-col{ padding-left: 8px; font-family: Cinzel, serif; font-weight: 800; font-size: var(--font-time); }
-.grid-header .day{ padding: 10px; border-radius: 0; text-align: center; background: rgba(0,0,0,0.55); font-family: Cinzel, serif; font-weight: 800; font-size: var(--font-day); }
-.grid{ display: grid; grid-template-columns: var(--time-col-w) repeat(6, 1fr); grid-auto-rows: var(--slot-h); gap: var(--slot-gap); }
-.time-cell{ display: flex; align-items: center; padding-left: 80px; font-family: Cinzel, serif; font-weight: 900; font-size: var(--font-time); }
-.slot{ position: relative; background: rgba(0,0,0,0.55); border: var(--border-w) solid rgba(255,255,255,0.06); border-radius: 0; padding: 12px 12px 24px 12px; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; overflow: hidden; cursor: pointer; }
-.slot.empty{ display: flex; align-items: center; justify-content: center; color: #cfcfcf; font-weight: 800; }
-.slot .content{ display: flex; flex-direction: column; gap: 8px; flex: 1; align-items: center; }
-.activity-name{ font-family:Cinzel,serif;font-weight:900;font-size:var(--font-activity); text-align:center;word-break:break-word;color:#fff; }
+        .logo-icon {
+            width: clamp(60px, 12vw, 85px);
+            height: clamp(60px, 12vw, 85px);
+            background: linear-gradient(135deg, #1a1a1f, #0a0a0c);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(35px, 8vw, 50px);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+            border: 1px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+        }
 
-/* tag */
-.tag { position: absolute; bottom: 1px; left: 12px; right: 12px; font-family: Cinzel, serif; font-weight: 900; font-size: var(--font-tag); line-height: 1.05; white-space: normal; word-break: break-word; overflow-wrap: anywhere; text-align: center; padding: 6px 1px; max-height: calc(var(--font-tag) * 4); color: var(--default-tag-color); background: transparent; pointer-events: none; box-sizing: border-box; border-radius: 2px; }
+        .logo-icon::before {
+            content: '⚒️';
+            position: absolute;
+            font-size: 40px;
+            opacity: 0.2;
+            animation: forgeHammer 3s infinite;
+        }
 
-/* gear */
-.gear{ position:absolute;right:10px;top:10px; width:30px;height:30px;border-radius:0; display:flex;align-items:center;justify-content:center; background:rgba(0,0,0,0.6); opacity:0;transition:opacity .12s; cursor:pointer;font-size:16px; }
-.slot:hover .gear{opacity:1}
+        @keyframes forgeHammer {
+            0%, 100% { transform: translate(0, 0); opacity: 0.2; }
+            50% { transform: translate(2px, -2px); opacity: 0.4; }
+        }
 
-/* rules */
-.rules{ position: absolute; left: var(--rules-left); top: var(--rules-top); width: var(--rules-width); padding: var(--rules-padding); border-radius: 0; background: rgba(0,0,0,0.7); font-family: Cinzel, serif; font-size: var(--rules-font); display: none; flex-direction: column; gap: 8px; box-sizing: border-box; max-height: none; overflow: visible; }
-.rules > .small { font-size: var(--rules-label-font-size); font-weight: 800; }
-.rules .rule-line{ padding: 8px; border-radius: 0; background: rgba(255,255,255,0.02); font-size: inherit; line-height: 1.25; word-break: break-word; }
+        .logo-icon span {
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.5));
+        }
 
-/* modal */
-.modal-back{ position:fixed;inset:0; background:rgba(0,0,0,0.6); display:none;align-items:center;justify-content:center; z-index:200; }
-.modal{ width:820px;background:#050a10;border-radius:0; padding:16px;color:#fff; box-shadow:0 12px 40px rgba(0,0,0,0.6); font-family:Inter,system-ui; }
-.modal h3{font-family:Cinzel,serif;margin:0 0 8px 0}
-.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.section-title{font-weight:800;font-family:Cinzel,serif;margin-bottom:6px}
-.select,input[type="text"],input[type="color"],textarea{ width:100%;padding:10px;border-radius:0;border:1px solid rgba(255,255,255,0.2); background:#050a10;color:#fff; }
-.activity-list{ max-height:260px;overflow:auto;border-radius:0;padding:6px;background:#020408;border:1px solid rgba(255,255,255,0.15); }
-.activity-item{ padding:8px;border-radius:0; display:flex;justify-content:space-between;align-items:center; cursor:pointer; }
-.activity-item:hover{background:rgba(255,255,255,0.06)}
-.color-palette{display:flex;gap:8px;align-items:center}
-.color-swatch{ width:34px;height:34px;border-radius:0;border:2px solid rgba(255,255,255,0.4); cursor:pointer; }
-.modal-actions{ display:flex;gap:8px;justify-content:flex-end;margin-top:100px }
+        .title-info {
+            flex: 1;
+        }
 
-/* sliders */
-.slider-row{display:flex;align-items:center;gap:8px;margin-top:8px}
-.slider-row input[type="range"]{flex:1}
-.slider-value{min-width:44px;text-align:right;font-weight:700}
+        .clan-name {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(24px, 6vw, 42px);
+            font-weight: 900;
+            color: #e5e7eb;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+            margin-bottom: 4px;
+        }
 
-/* hide UI during capture */
-.canvas.capture .gear, .canvas.capture .modal-back, .canvas.capture .btn-primary, .canvas.capture .btn-ghost { display:none !important; }
+        .clan-slogan {
+            font-size: var(--text-sm);
+            color: #9ca3af;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
 
-.small{font-size:13px;opacity:0.9}
+        .date-admin {
+            font-size: var(--text-base);
+            font-weight: 500;
+            color: #9ca3af;
+            margin-top: 8px;
+        }
 
-/* responsive safety */
-@media (max-width: 1100px) {
-  :root { --font-day: 32px; --font-time: 28px; }
-  .canvas-wrapper { transform: scale(0.9); }
-}
-</style>
+        .admin-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .admin-label {
+            font-size: var(--text-sm);
+            opacity: 0.7;
+            color: #9ca3af;
+        }
+
+        .admin-dropdown {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid var(--primary);
+            color: #e5e7eb;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .admin-dropdown:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* CONTROLES */
+        .controls {
+            display: flex;
+            gap: var(--gap);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: clamp(8px, 2vw, 12px) clamp(16px, 4vw, 24px);
+            border-radius: 8px;
+            border: none;
+            font-weight: 700;
+            font-size: var(--text-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Cinzel', serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1a1a1f, #0a0a0c);
+            color: #e5e7eb;
+            border: 1px solid var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2a2a2f, #1a1a1f);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(239, 68, 68, 0.2);
+            border-color: var(--accent);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* PLANNING */
+        .planning-container {
+            padding: var(--gap);
+            overflow-x: auto;
+        }
+
+        .planning-grid {
+            display: flex;
+            flex-direction: column;
+            gap: var(--gap);
+            min-width: 600px;
+        }
+
+        .days-header {
+            display: grid;
+            grid-template-columns: clamp(80px, 12vw, 120px) repeat(6, 1fr);
+            gap: var(--gap);
+            position: sticky;
+            top: 0;
+            background: var(--dark-bg);
+            z-index: 10;
+            padding-bottom: 8px;
+        }
+
+        .day-cell {
+            background: linear-gradient(135deg, #111113, #0a0a0c);
+            padding: clamp(12px, 3vw, 16px);
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 800;
+            font-size: var(--text-lg);
+            border: 1px solid var(--border);
+            font-family: 'Cinzel', serif;
+            color: #e5e7eb;
+        }
+
+        .time-slot-row {
+            display: grid;
+            grid-template-columns: clamp(80px, 12vw, 120px) repeat(6, 1fr);
+            gap: var(--gap);
+        }
+
+        .time-label {
+            background: linear-gradient(135deg, #111113, #0a0a0c);
+            padding: clamp(12px, 3vw, 16px);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: var(--text-xl);
+            border: 1px solid var(--border);
+            font-family: 'Cinzel', serif;
+            color: #9ca3af;
+        }
+
+        .activity-card {
+            background: rgba(17, 17, 19, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: clamp(8px, 2vw, 12px);
+            min-height: var(--slot-height);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-4px);
+            background: rgba(239, 68, 68, 0.08);
+            border-color: var(--accent);
+            box-shadow: 0 5px 20px rgba(239, 68, 68, 0.15);
+        }
+
+        .activity-card.empty {
+            justify-content: center;
+            align-items: center;
+            opacity: 0.5;
+        }
+
+        .activity-name {
+            font-weight: 800;
+            font-size: var(--text-base);
+            text-align: center;
+            word-break: break-word;
+            line-height: 1.3;
+            font-family: 'Cinzel', serif;
+            color: #e5e7eb;
+        }
+
+        .activity-tag {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            right: 8px;
+            font-size: var(--text-xs);
+            font-weight: 800;
+            text-align: center;
+            padding: 4px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 6px;
+            letter-spacing: 1px;
+            font-family: 'Cinzel', serif;
+        }
+
+        .gear-icon {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            background: rgba(239, 68, 68, 0.6);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 14px;
+            color: #e5e7eb;
+        }
+
+        .activity-card:hover .gear-icon {
+            opacity: 1;
+        }
+
+        /* RÈGLES */
+        .rules-section {
+            margin: var(--gap);
+            padding: clamp(16px, 4vw, 24px);
+            background: rgba(17, 17, 19, 0.9);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .rules-title {
+            font-size: var(--text-lg);
+            font-weight: 800;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Cinzel', serif;
+            color: #9ca3af;
+        }
+
+        .rules-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .rule-item {
+            padding: 12px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            border-left: 4px solid;
+            font-size: var(--text-sm);
+        }
+
+        .rule-title {
+            font-weight: 800;
+            margin-bottom: 6px;
+            font-family: 'Cinzel', serif;
+        }
+
+        /* MODALE */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: var(--gap);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #111113, #0a0a0c);
+            border-radius: 20px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: clamp(20px, 5vw, 32px);
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            font-size: var(--text-xl);
+            font-weight: 800;
+            font-family: 'Cinzel', serif;
+            color: #e5e7eb;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 28px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .close-modal:hover {
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(16px, 4vw, 24px);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #9ca3af;
+            font-family: 'Cinzel', serif;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #e5e7eb;
+            font-size: var(--text-sm);
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .color-preview {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+            border-color: #e5e7eb;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-value {
+            min-width: 45px;
+            text-align: center;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: var(--text-sm);
+            color: #9ca3af;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a1f;
+            color: #fca5a5;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            z-index: 1100;
+            animation: slideIn 0.3s ease;
+            font-family: 'Cinzel', serif;
+            border: 1px solid var(--accent);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* MODE CAPTURE PNG */
+        .capture-mode .btn-primary,
+        .capture-mode .btn-danger,
+        .capture-mode .gear-icon,
+        .capture-mode .admin-selector {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+        }
+
+        .capture-mode .date-admin,
+        .capture-mode .clan-name,
+        .capture-mode .clan-slogan {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        @media (max-width: 768px) {
+            .modal-body {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-top {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #111113;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #9ca3af;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+    </style>
 </head>
 <body>
-
-  <!-- TOPBAR -->
-  <div class="topbar" id="topbar" role="banner" aria-label="Barre supérieure">
-    <div class="topbar-inner">
-      <div class="date-block">
-        <div class="label small">Début</div>
-        <button class="value date-btn" id="displayStart" data-type="start" aria-haspopup="dialog">—</button>
-        <input type="date" id="inputStart" class="date-input" />
-      </div>
-      <div class="date-block">
-        <div class="label small">Fin</div>
-        <button class="value date-btn" id="displayEnd" data-type="end" aria-haspopup="dialog">—</button>
-        <input type="date" id="inputEnd" class="date-input" />
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <button id="exportPng" class="btn-primary">Exporter PNG</button>
-        <button id="resetBtn" class="btn-ghost">Réinitialiser</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- wrapper -->
-  <div class="canvas-wrapper" id="canvasWrapper">
-    <div class="canvas" id="canvas">
-
-      <!-- GRID -->
-      <div class="grid-wrap" id="gridWrap">
-        <div class="grid-header">
-          <div class="time-col"></div>
-          <div class="day">Lundi</div>
-          <div class="day">Mardi</div>
-          <div class="day">Mercredi</div>
-          <div class="day">Jeudi</div>
-          <div class="day">Vendredi</div>
-          <div class="day">Samedi</div>
+    <div class="app-container" id="appContainer">
+        <div class="header">
+            <div class="header-top">
+                <div class="logo-area">
+                    <div class="logo-icon">
+                        <span>⚒️</span>
+                    </div>
+                    <div class="title-info">
+                        <div class="clan-name" id="clanName">LES FORGES DANS L'HONNEUR</div>
+                        <div class="clan-slogan">• Honneur • Fraternité • Excellence •</div>
+                        <div class="date-admin" id="dateAdminTitle">📅 Planning du -- au --</div>
+                        <div class="admin-selector">
+                            <span class="admin-label">Organisé par :</span>
+                            <select class="admin-dropdown" id="adminSelect">
+                                <option value="Chill">Chill</option>
+                                <option value="Ital">Ital</option>
+                                <option value="Rysing">Rysing</option>
+                                <option value="Darkdoudu">Darkdoudu</option>
+                                <option value="Atlas">Atlas</option>
+                                <option value="Aranwe">Aranwe</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" id="exportBtn">📸 Exporter PNG</button>
+                    <button class="btn btn-danger" id="resetBtn">🗑️ Réinitialiser</button>
+                </div>
+            </div>
         </div>
 
-        <div class="grid" id="grid">
-          <!-- 15H -->
-          <div class="time-cell">15H</div>
-          <div class="slot empty" data-day="1" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-          <div class="slot empty" data-day="2" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-          <div class="slot empty" data-day="3" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-          <div class="slot empty" data-day="4" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-          <div class="slot empty" data-day="5" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-          <div class="slot empty" data-day="6" data-hour="15"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-
-          <!-- 21H -->
-          <div class="time-cell">21H</div>
-          <div class="slot empty" data-day="1" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-          <div class="slot empty" data-day="2" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-          <div class="slot empty" data-day="3" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-          <div class="slot empty" data-day="4" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-          <div class="slot empty" data-day="5" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-          <div class="slot empty" data-day="6" data-hour="21"><div class="gear">⚙</div><div class="content"><div class="activity-name">Vide</div></div></div>
-        </div>
-      </div>
-
-      <!-- RULES -->
-      <div class="rules" id="rulesArea">
-        <div class="small">Règles :</div>
-        <div id="rulesContent"></div>
-      </div>
-
-    </div>
-  </div>
-
-<!-- MODAL -->
-<div class="modal-back" id="modalBack">
-  <div class="modal" role="dialog" aria-modal="true">
-    <h3>Éditer la case</h3>
-    <div class="modal-grid">
-      <!-- gauche -->
-      <div>
-        <div class="section-title">Activité principale</div>
-        <div class="small">Catégorie</div>
-        <select id="categorySelect" class="select">
-          <option value="raid">Raid</option>
-          <option value="donjon">Donjon</option>
-          <option value="custom">Personnalisée</option>
-          <option value="libre">Activité libre</option>
-        </select>
-
-        <div style="height:8px"></div>
-        <div class="small">Liste / Nom</div>
-        <div id="activityList" class="activity-list"></div>
-
-        <div style="height:8px"></div>
-        <div class="small">Couleur du nom</div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-          <div class="color-palette" id="namePalette"></div>
-          <input type="color" id="nameColorPicker" value="#ffffff" />
+        <div class="planning-container">
+            <div class="planning-grid">
+                <div class="days-header" id="daysHeader">
+                    <div class="day-cell"></div>
+                </div>
+                <div id="planningGrid"></div>
+            </div>
         </div>
 
-        <div style="height:8px"></div>
-        <div class="small">Taille du texte (activité principale)</div>
-        <div class="slider-row">
-          <input type="range" id="activityFontRange" min="12" max="72" step="1" />
-          <div class="slider-value" id="activityFontValue">28px</div>
+        <div class="rules-section" id="rulesSection" style="display: none;">
+            <div class="rules-title">
+                <span>📜</span> Règles
+            </div>
+            <div class="rules-list" id="rulesList"></div>
         </div>
-      </div>
-
-      <!-- droite -->
-      <div>
-        <div class="section-title">Activité spéciale</div>
-        <div class="small">Type</div>
-        <select id="specialSelect" class="select">
-          <option value="none">Aucune</option>
-          <option value="roulette">Roulette</option>
-          <option value="special">Soirée spéciale</option>
-          <option value="decouverte">Découverte</option>
-          <option value="chill">CHILL</option>
-          <option value="custom">Personnalisée</option>
-          <option value="maitrise">Maîtrise</option>
-        </select>
-
-        <div style="height:8px"></div>
-        <div class="small">Tag / Nom spécial</div>
-        <input type="text" id="specialName" placeholder="Nom du tag (si personnalisé)" style="display:none" />
-
-        <div style="height:8px"></div>
-        <div class="small">Règles (modifiable)</div>
-        <textarea id="specialRules" rows="5" placeholder="Texte des règles..."></textarea>
-
-        <div style="height:8px"></div>
-        <div class="small">Couleur du tag & cadre</div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-          <div class="color-palette" id="tagPalette"></div>
-          <input type="color" id="tagColorPicker" value="#ffd400" />
-        </div>
-        <div style="height:6px"></div>
-        <input type="text" id="tagHex" placeholder="#rrggbb" />
-
-        <div style="height:8px"></div>
-        <div class="small">Taille du texte (tag spécial)</div>
-        <div class="slider-row">
-          <input type="range" id="tagFontRange" min="10" max="48" step="1" />
-          <div class="slider-value" id="tagFontValue">20px</div>
-        </div>
-      </div>
     </div>
 
-    <div class="modal-actions">
-      <button class="btn-ghost" id="cancelBtn">Annuler</button>
-      <button class="btn-primary" id="saveBtn">Enregistrer</button>
+    <input type="date" id="startDateInput" style="display: none;">
+    <input type="date" id="endDateInput" style="display: none;">
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚒️ Éditer l'activité</h2>
+                <button class="close-modal" id="closeModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <div class="form-group">
+                        <label>🎮 Type d'activité</label>
+                        <select id="activityType">
+                            <option value="raid">Raid</option>
+                            <option value="donjon">Donjon</option>
+                            <option value="custom">Personnalisée</option>
+                            <option value="libre">Libre</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="activityListContainer">
+                        <label>📋 Liste des activités</label>
+                        <div id="activityList" style="max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🎨 Couleur du texte</label>
+                        <input type="color" id="textColor" value="#e5e7eb">
+                        <div class="color-preview" id="textColorPalette"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📏 Taille du texte</label>
+                        <div class="slider-container">
+                            <input type="range" id="textSize" min="12" max="48" step="1" value="20">
+                            <span class="slider-value" id="textSizeValue">20px</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="form-group">
+                        <label>✨ Tag spécial</label>
+                        <select id="specialType">
+                            <option value="none">Aucun</option>
+                            <option value="roulette">🎲 Roulette</option>
+                            <option value="special">🌟 Soirée spéciale</option>
+                            <option value="decouverte">🔍 Découverte</option>
+                            <option value="chill">😎 Chill</option>
+                            <option value="maitrise">🏆 Maîtrise</option>
+                            <option value="custom">✏️ Personnalisé</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="specialNameGroup" style="display: none;">
+                        <label>🏷️ Nom du tag</label>
+                        <input type="text" id="specialName" placeholder="Ex: Événement spécial">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📜 Règles / Description</label>
+                        <textarea id="specialRules" placeholder="Décrivez les règles spécifiques..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🎨 Couleur du tag</label>
+                        <input type="color" id="tagColor" value="#ef4444">
+                        <div class="color-preview" id="tagColorPalette"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📏 Taille du tag</label>
+                        <div class="slider-container">
+                            <input type="range" id="tagSize" min="10" max="36" step="1" value="14">
+                            <span class="slider-value" id="tagSizeValue">14px</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelModalBtn" style="background: rgba(192,192,192,0.1); color: #9ca3af; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer;">Annuler</button>
+                <button class="btn btn-primary" id="saveModalBtn">Enregistrer</button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script>
-/* layout */
-const layout = {
-  topbar: { left: 540, top: 8 },
-  grid:   { left: 45, top: 200 },
-  rules:  { left: 130, top: 640 },
-  offsets: {
-    displayStart: { x: 0, y: 0 },
-    displayEnd:   { x: 0, y: 0 },
-    export:       { x: -200, y: 0 },
-    reset:        { x: -200, y: 0 }
-  }
-};
-
-/* RAID / DONJON data */
-const RAID_DATA = [
-  {name:"Désert Perpétuel", color:"#7B1FA2", defaultFont:{activity:30, tag:22}},
-  {name:"Serment du Disciple", color:"#2E003E", defaultFont:{activity:28, tag:20}},
-  {name:"Origine des Cauchemars", color:"#B00020", defaultFont:{activity:28, tag:20}},
-  {name:"Jardin du Salut", color:"#2ECC71", defaultFont:{activity:26, tag:20}},
-  {name:"Dernier Vœu", color:"#8E44AD", defaultFont:{activity:28, tag:20}},
-  {name:"Crypte de la Pierre", color:"#5DADE2", defaultFont:{activity:28, tag:20}},
-  {name:"Chute de Cropta", color:"#1ABC9C", defaultFont:{activity:26, tag:20}},
-  {name:"Chute du Roi", color:"#d378b2", defaultFont:{activity:26, tag:20}},
-  {name:"Caveau de Verre", color:"#1F8EFA", defaultFont:{activity:28, tag:20}},
-  {name:"Orée du salut", color:"#9C163B", defaultFont:{activity:28, tag:20}}
-].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
-
-const DONJON_DATA = [
-  {name:"Équilibre", color:"#BDC3C7", defaultFont:{activity:28, tag:20}},
-  {name:"Ruine de la Guerrière", color:"#922B21", defaultFont:{activity:26, tag:20}},
-  {name:"Fantôme des Profondeurs", color:"#154360", defaultFont:{activity:28, tag:20}},
-  {name:"Flèche de la Vigie", color:"#F1C40F", defaultFont:{activity:26, tag:20}},
-  {name:"Trône Brisé", color:"#6C3483", defaultFont:{activity:28, tag:20}},
-  {name:"Hôte Vesper", color:"#2E86C1", defaultFont:{activity:26, tag:20}},
-  {name:"Dualité", color:"#C0392B", defaultFont:{activity:28, tag:20}},
-  {name:"Fosse de l’Hérésie", color:"#145A32", defaultFont:{activity:26, tag:20}},
-  {name:"Étreinte de l’Avarice", color:"#F4D03F", defaultFont:{activity:26, tag:20}},
-  {name:"Prophétie", color:"#2C2C54", defaultFont:{activity:28, tag:20}}
-].sort((a,b)=> a.name.localeCompare(b.name,'fr'));
-
-/* DOM refs (sûr car script inclus en fin de body) */
-const root = document.documentElement;
-const canvas = document.getElementById('canvas');
-const canvasWrapper = document.getElementById('canvasWrapper');
-const topbar = document.getElementById('topbar');
-const gridWrap = document.getElementById('gridWrap');
-const rulesArea = document.getElementById('rulesArea');
-const rulesContent = document.getElementById('rulesContent');
-const displayStart = document.getElementById('displayStart');
-const displayEnd = document.getElementById('displayEnd');
-const inputStart = document.getElementById('inputStart');
-const inputEnd = document.getElementById('inputEnd');
-const modalBack = document.getElementById('modalBack');
-const activityList = document.getElementById('activityList');
-const categorySelect = document.getElementById('categorySelect');
-const namePalette = document.getElementById('namePalette');
-const nameColorPicker = document.getElementById('nameColorPicker');
-const specialSelect = document.getElementById('specialSelect');
-const specialName = document.getElementById('specialName');
-const specialRules = document.getElementById('specialRules');
-const tagPalette = document.getElementById('tagPalette');
-const tagColorPicker = document.getElementById('tagColorPicker');
-const tagHex = document.getElementById('tagHex');
-const saveBtn = document.getElementById('saveBtn');
-const cancelBtn = document.getElementById('cancelBtn');
-const exportPng = document.getElementById('exportPng');
-const resetBtn = document.getElementById('resetBtn');
-
-/* sliders refs */
-const activityFontRange = document.getElementById('activityFontRange');
-const activityFontValue = document.getElementById('activityFontValue');
-const tagFontRange = document.getElementById('tagFontRange');
-const tagFontValue = document.getElementById('tagFontValue');
-
-/* small helpers */
-function cssNumber(varName){
-  const v = getComputedStyle(document.documentElement).getPropertyValue(varName);
-  const n = parseInt(v, 10);
-  return Number.isFinite(n) ? n : 0;
-}
-
-/* apply layout */
-function applyLayoutFromObject(l){
-  if (!l) return;
-  if (l.topbar) {
-    root.style.setProperty('--topbar-left', (l.topbar.left ?? 540) + 'px');
-    root.style.setProperty('--topbar-top',  (l.topbar.top  ?? 8) + 'px');
-  }
-  if (l.grid) {
-    root.style.setProperty('--grid-left', (l.grid.left ?? 45) + 'px');
-    root.style.setProperty('--grid-top',  (l.grid.top  ?? 200) + 'px');
-  }
-  if (l.rules) {
-    root.style.setProperty('--rules-left', (l.rules.left ?? 128) + 'px');
-    root.style.setProperty('--rules-top',  (l.rules.top  ?? 640) + 'px');
-  }
-  if (l.offsets) {
-    const o = l.offsets;
-    root.style.setProperty('--displayStart-offset-x', (o.displayStart?.x ?? 0) + 'px');
-    root.style.setProperty('--displayStart-offset-y', (o.displayStart?.y ?? 0) + 'px');
-    root.style.setProperty('--displayEnd-offset-x',   (o.displayEnd?.x ?? 0) + 'px');
-    root.style.setProperty('--displayEnd-offset-y',   (o.displayEnd?.y ?? 0) + 'px');
-    root.style.setProperty('--export-offset-x',       (o.export?.x ?? 0) + 'px');
-    root.style.setProperty('--export-offset-y',       (o.export?.y ?? 0) + 'px');
-    root.style.setProperty('--reset-offset-x',        (o.reset?.x ?? 0) + 'px');
-    root.style.setProperty('--reset-offset-y',        (o.reset?.y ?? 0) + 'px');
-  }
-}
-
-/* wrapper applyLayout */
-function applyLayout(){
-  applyLayoutFromObject(layout);
-  if (layout.topbar && topbar) {
-    topbar.style.left = layout.topbar.left + 'px';
-    topbar.style.top = layout.topbar.top + 'px';
-  }
-  if (layout.grid && gridWrap) {
-    gridWrap.style.left = layout.grid.left + 'px';
-    gridWrap.style.top = layout.grid.top + 'px';
-  }
-  if (layout.rules && rulesArea) {
-    rulesArea.style.left = layout.rules.left + 'px';
-    rulesArea.style.top = layout.rules.top + 'px';
-  }
-}
-
-/* util: ouvre l'input date */
-function openDatePicker(input){
-  if (!input) return;
-  if (typeof input.showPicker === 'function') {
-    try { input.showPicker(); return; } catch(e){ /* fallthrough */ }
-  }
-  try { input.focus(); } catch(e){}
-  setTimeout(()=> {
-    try { input.click(); } catch(e){}
-  }, 10);
-}
-
-/* Dates pickers: single event handlers (plus util openDatePicker) */
-if (displayStart) displayStart.addEventListener('click', ()=> openDatePicker(inputStart));
-if (displayEnd) displayEnd.addEventListener('click', ()=> openDatePicker(inputEnd));
-
-/* dates init & helpers */
-function formatShortDate(d){
-  if(!d) return '—';
-  const dt = new Date(d);
-  if (isNaN(dt.getTime())) return '—';
-  return dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});
-}
-(function initDates(){
-  const today = new Date();
-  const day = today.getDay();
-  const diffToMonday = (day === 0) ? -6 : (1 - day);
-  const start = new Date(today); start.setDate(today.getDate() + diffToMonday);
-  const end = new Date(start); end.setDate(start.getDate() + 5);
-
-  if (inputStart) inputStart.value = start.toISOString().slice(0,10);
-  if (inputEnd) inputEnd.value = end.toISOString().slice(0,10);
-
-  if (displayStart) displayStart.textContent = formatShortDate(inputStart.value);
-  if (displayEnd) displayEnd.textContent = formatShortDate(inputEnd.value);
-})();
-
-/* palettes */
-const QUICK_COLORS = ['#ffd400','#ff3b3b','#00c853','#1e88e5','#9c27b0'];
-function buildPalettes(){
-  QUICK_COLORS.forEach(c=>{
-    const s1 = document.createElement('div'); s1.className='color-swatch'; s1.style.background=c;
-    s1.addEventListener('click', ()=> { if(nameColorPicker) nameColorPicker.value = c; });
-    if (namePalette) namePalette.appendChild(s1);
-    const s2 = document.createElement('div'); s2.className='color-swatch'; s2.style.background=c;
-    s2.addEventListener('click', ()=> { if(tagColorPicker) { tagColorPicker.value = c; tagHex.value = c; }});
-    if (tagPalette) tagPalette.appendChild(s2);
-  });
-}
-buildPalettes();
-
-/* activities list rendering */
-function renderActivityList(){
-  if(!activityList) return;
-  activityList.innerHTML = '';
-  const cat = categorySelect ? categorySelect.value : 'raid';
-  let list = [];
-  if(cat === 'raid') list = RAID_DATA;
-  else if(cat === 'donjon') list = DONJON_DATA;
-  else if(cat === 'libre') {
-    activityList.innerHTML = '<div class="activity-item">Aucune sélection nécessaire</div>';
-    currentSelectedActivity = { name: "Activité libre", color: "#ffffff", custom:false };
-    return;
-  }
-  if(cat === 'custom'){
-    const wrap = document.createElement('div');
-    wrap.className = 'activity-item';
-    wrap.textContent = 'Cliquer pour saisir une activité personnalisée';
-    wrap.addEventListener('click', ()=>{
-      const name = prompt("Nom de l'activité personnalisée :","Nouvelle activité") || "Activité personnalisée";
-      currentSelectedActivity = { name, color: "#ffffff", custom:true };
-      highlightSelected();
-    });
-    activityList.appendChild(wrap);
-    return;
-  }
-  list.forEach(a=>{
-    const it = document.createElement('div'); it.className='activity-item';
-    it.innerHTML = `<div>${a.name}</div><div style="width:18px;height:18px;background:${a.color};"></div>`;
-    it.addEventListener('click', ()=>{
-      const fonts = a.defaultFont ? { ...a.defaultFont } : undefined;
-      currentSelectedActivity = { name:a.name, color:a.color, custom:false, defaultFont: fonts };
-      if (nameColorPicker) nameColorPicker.value = a.color;
-      if(fonts){
-        if (activityFontRange) activityFontRange.value = fonts.activity || getDefaultActivityFont();
-        if (tagFontRange) tagFontRange.value = fonts.tag || getDefaultTagFont();
-        applyPreviewFontSizesToCurrentSlot();
-      }
-      highlightSelected();
-    });
-    activityList.appendChild(it);
-  });
-}
-function highlightSelected(){
-  if(!activityList) return;
-  Array.from(activityList.children).forEach(ch=> ch.style.background='transparent');
-  if(!currentSelectedActivity) return;
-  const items = Array.from(activityList.children);
-  const idx = items.findIndex(it => it.textContent.trim().startsWith(currentSelectedActivity.name));
-  if(idx>=0) items[idx].style.background = 'rgba(255,255,255,0.1)';
-}
-
-/* modal state */
-let state = {};
-let currentKey = null;
-let currentSelectedActivity = null;
-const previewBackup = {};
-
-/* defaults for font sizes */
-function getDefaultActivityFont() {
-  const v = getComputedStyle(document.documentElement).getPropertyValue('--font-activity').trim();
-  return parseInt(v, 10) || 28;
-}
-function getDefaultTagFont() {
-  const v = getComputedStyle(document.documentElement).getPropertyValue('--font-tag').trim();
-  return parseInt(v, 10) || 20;
-}
-
-/* default rules */
-const DEFAULT_RULES = {
-  roulette: "Chaque joueur aura droit à 3 tirages, ce qui déterminera l'arme qu'il devra garder tout le long du raid. Les tirages ne sont pas rétroactifs, alors choisissez bien.",
-  special: "Composition d'une majorité de joueurs expérimentés, afin de prendre le temps pour l'apprentissage d'activités considérées difficiles.",
-  decouverte: "Que vous soyez expérimenté ou non, c'est ouvert à tous.",
-  chill: "Relax et découverte" // texte clarifié
-};
-
-/* open modal */
-function openModalForKey(key){
-  currentKey = key;
-  const s = state[key];
-
-  if (categorySelect) categorySelect.value = 'raid';
-  if (specialSelect) specialSelect.value = 'none';
-  if (specialName) { specialName.style.display = 'none'; specialName.value = ''; }
-  if (specialRules) specialRules.value = '';
-  if (nameColorPicker) nameColorPicker.value = '#ffffff';
-  if (tagColorPicker) tagColorPicker.value = '#ffd400';
-  if (tagHex) tagHex.value = '#ffd400';
-  currentSelectedActivity = null;
-
-  if(s && s.activity){
-    const inRaid = RAID_DATA.find(r=>r.name===s.activity.name);
-    const inDonjon = DONJON_DATA.find(d=>d.name===s.activity.name);
-    if(inRaid && categorySelect) categorySelect.value = 'raid';
-    else if(inDonjon && categorySelect) categorySelect.value = 'donjon';
-    else if(categorySelect) categorySelect.value = 'custom';
-    currentSelectedActivity = {...s.activity};
-    if (nameColorPicker) nameColorPicker.value = s.activity.color || '#ffffff';
-  }
-  if(s && s.special){
-    if (specialSelect) specialSelect.value = s.special.type || 'none';
-    if(s.special.type === 'custom' && specialName){
-      specialName.style.display='block';
-      specialName.value = s.special.name || '';
-    }
-    if (specialRules) specialRules.value = s.special.rules || '';
-    if (tagColorPicker) tagColorPicker.value = s.special.color || '#ffd400';
-    if (tagHex) tagHex.value = s.special.color || '#ffd400';
-  }
-
-  renderActivityList();
-  highlightSelected();
-
-  const defaultActivityFont = getDefaultActivityFont();
-  const defaultTagFont = getDefaultTagFont();
-
-  const savedActivityFont = s?.fontSizes?.activity ?? defaultActivityFont;
-  const savedTagFont = s?.fontSizes?.tag ?? defaultTagFont;
-
-  if (activityFontRange) activityFontRange.value = savedActivityFont;
-  if (activityFontValue) activityFontValue.textContent = savedActivityFont + 'px';
-  if (tagFontRange) tagFontRange.value = savedTagFont;
-  if (tagFontValue) tagFontValue.textContent = savedTagFont + 'px';
-
-  const [day,hour] = key.split('-');
-  const slotSelector = `.slot[data-day="${day}"][data-hour="${hour}"]`;
-  const slotEl = document.querySelector(slotSelector);
-  if(slotEl){
-    const nameEl = slotEl.querySelector('.activity-name');
-    const tagEl = slotEl.querySelector('.tag');
-    previewBackup[key] = {
-      nameFont: nameEl ? (nameEl.style.fontSize || '') : '',
-      tagFont: tagEl ? (tagEl.style.fontSize || '') : '',
-      tagExists: !!tagEl
-    };
-    if(nameEl) nameEl.style.fontSize = savedActivityFont + 'px';
-    if(tagEl) tagEl.style.fontSize = savedTagFont + 'px';
-  }
-
-  if (modalBack) modalBack.style.display = 'flex';
-}
-
-/* click slots (delegation would be fine - keep original style) */
-document.querySelectorAll('.slot').forEach(slot=>{
-  slot.addEventListener('click', ()=>{
-    const key = slot.dataset.day + '-' + slot.dataset.hour;
-    openModalForKey(key);
-  });
-});
-
-/* modal events */
-if (categorySelect) categorySelect.addEventListener('change', ()=>{ currentSelectedActivity=null; renderActivityList(); });
-
-if (specialSelect) specialSelect.addEventListener('change', (e)=>{
-  const v = e.target.value;
-  if(v === 'custom' && specialName){ specialName.style.display='block'; specialName.focus(); }
-  else if (specialName) { specialName.style.display='none'; specialName.value=''; }
-
-  if(v === 'roulette'){
-    const col = getComputedStyle(document.documentElement).getPropertyValue('--roulette-default').trim() || '#ffd400';
-    if(tagColorPicker) tagColorPicker.value = col;
-    if(tagHex) tagHex.value = col;
-    if(specialRules) specialRules.value = DEFAULT_RULES.roulette;
-    return;
-  }
-  if(v === 'special'){
-    const col = getComputedStyle(document.documentElement).getPropertyValue('--special-default').trim() || '#ff3b3b';
-    if(tagColorPicker) tagColorPicker.value = col;
-    if(tagHex) tagHex.value = col;
-    if(specialRules) specialRules.value = DEFAULT_RULES.special;
-    return;
-  }
-  if(v === 'decouverte'){
-    if(tagColorPicker) tagColorPicker.value = '#00c853';
-    if(tagHex) tagHex.value = '#00c853';
-    if(specialRules) specialRules.value = DEFAULT_RULES.decouverte;
-    return;
-  }
-  if(v === 'chill'){
-    if(tagColorPicker) tagColorPicker.value = '#9c27b0';
-    if(tagHex) tagHex.value = '#9c27b0';
-    if(specialRules) specialRules.value = DEFAULT_RULES.chill;
-    return;
-  }
-  if(v === 'maitrise'){
-    if(tagColorPicker) tagColorPicker.value = '#9e9e9e';
-    if(tagHex) tagHex.value = '#9e9e9e';
-    if(specialRules) specialRules.value = '';
-    return;
-  }
-  if(v === 'none'){
-    if(specialRules) specialRules.value = '';
-    return;
-  }
-});
-
-if (tagColorPicker) tagColorPicker.addEventListener('input', ()=> { if(tagHex) tagHex.value = tagColorPicker.value; });
-if (tagHex) tagHex.addEventListener('input', ()=>{
-  const v = tagHex.value.trim();
-  if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v) && tagColorPicker) tagColorPicker.value = v;
-});
-
-/* slider live listeners */
-function applyPreviewFontSizesToCurrentSlot(){
-  if(!currentKey) return;
-  const [day,hour] = currentKey.split('-');
-  const slotSelector = `.slot[data-day="${day}"][data-hour="${hour}"]`;
-  const slotEl = document.querySelector(slotSelector);
-  if(!slotEl) return;
-  const nameEl = slotEl.querySelector('.activity-name');
-  const tagEl = slotEl.querySelector('.tag');
-
-  const aSize = activityFontRange ? parseInt(activityFontRange.value, 10) : getDefaultActivityFont();
-  const tSize = tagFontRange ? parseInt(tagFontRange.value, 10) : getDefaultTagFont();
-
-  if(nameEl) nameEl.style.fontSize = aSize + 'px';
-  if(tagEl) tagEl.style.fontSize = tSize + 'px';
-
-  if (activityFontValue) activityFontValue.textContent = aSize + 'px';
-  if (tagFontValue) tagFontValue.textContent = tSize + 'px';
-}
-
-if (activityFontRange) activityFontRange.addEventListener('input', applyPreviewFontSizesToCurrentSlot);
-if (tagFontRange) tagFontRange.addEventListener('input', applyPreviewFontSizesToCurrentSlot);
-
-/* save */
-if (saveBtn) saveBtn.addEventListener('click', ()=>{
-  if(!currentKey) return;
-
-  let activity = null;
-  if(categorySelect && categorySelect.value === 'custom'){
-    if(currentSelectedActivity && currentSelectedActivity.custom){
-      activity = {...currentSelectedActivity, color: nameColorPicker ? nameColorPicker.value : '#ffffff'};
-    }else{
-      const name = prompt("Nom de l'activité personnalisée :","Activité") || "Activité";
-      activity = { name, color: nameColorPicker ? nameColorPicker.value : '#ffffff' };
-    }
-  }else{
-    if(currentSelectedActivity){
-      activity = {...currentSelectedActivity, color: nameColorPicker ? nameColorPicker.value : '#ffffff'};
-    }else{
-      const list = (categorySelect && categorySelect.value === 'raid') ? RAID_DATA : DONJON_DATA;
-      const first = list[0];
-      activity = { name:first.name, color:first.color, defaultFont:first.defaultFont };
-    }
-  }
-
-  const type = specialSelect ? specialSelect.value : 'none';
-  let special = null;
-  if(type !== 'none'){
-    const name = type === 'custom'
-      ? (specialName && specialName.value.trim() || 'Personnalisée')
-      : (type === 'roulette' ? 'Roulette' : (type === 'decouverte' ? 'Découverte' : (type === 'chill' ? 'CHILL' : (type === 'maitrise' ? 'Maîtrise' : 'Soirée spéciale'))));
-    let rules = specialRules ? specialRules.value.trim() : '';
-    if (!rules) {
-      if (type === 'roulette') rules = DEFAULT_RULES.roulette;
-      else if (type === 'special') rules = DEFAULT_RULES.special;
-      else if (type === 'decouverte') rules = DEFAULT_RULES.decouverte;
-      else if (type === 'chill') rules = DEFAULT_RULES.chill;
-      else rules = "";
-    }
-    const color = tagColorPicker ? tagColorPicker.value : '#ffffff';
-    special = { type, name, rules, color };
-  }
-
-  const fontSizes = {
-    activity: activityFontRange ? parseInt(activityFontRange.value,10) : getDefaultActivityFont(),
-    tag: tagFontRange ? parseInt(tagFontRange.value,10) : getDefaultTagFont()
-  };
-
-  state[currentKey] = { activity, special, fontSizes };
-  if (modalBack) modalBack.style.display = 'none';
-  currentKey = null;
-  currentSelectedActivity = null;
-  refreshGrid();
-});
-
-/* cancel */
-if (cancelBtn) cancelBtn.addEventListener('click', ()=>{
-  if(currentKey && previewBackup[currentKey]){
-    const [day,hour] = currentKey.split('-');
-    const slotSelector = `.slot[data-day="${day}"][data-hour="${hour}"]`;
-    const slotEl = document.querySelector(slotSelector);
-    if(slotEl){
-      const nameEl = slotEl.querySelector('.activity-name');
-      const tagEl = slotEl.querySelector('.tag');
-      const b = previewBackup[currentKey];
-      if(nameEl) nameEl.style.fontSize = b.nameFont || '';
-      if(tagEl) tagEl.style.fontSize = b.tagFont || '';
-    }
-    delete previewBackup[currentKey];
-  }
-  if (modalBack) modalBack.style.display='none';
-  currentKey=null;
-  currentSelectedActivity=null;
-});
-
-/* refresh grid */
-function refreshGrid(){
-  document.querySelectorAll('.slot').forEach(slot=>{
-    const key = slot.dataset.day + '-' + slot.dataset.hour;
-    const s = state[key];
-    const nameEl = slot.querySelector('.activity-name');
-    const content = slot.querySelector('.content');
-    const existingTag = slot.querySelector('.tag');
-    if(existingTag) existingTag.remove();
-
-    const borderWraw = getComputedStyle(document.documentElement).getPropertyValue('--border-w').trim();
-    const borderW = (parseInt(borderWraw,10) || 3) + 'px';
-
-    if(s && s.activity){
-      slot.classList.remove('empty');
-      if(nameEl) nameEl.textContent = s.activity.name;
-      if(nameEl) nameEl.style.color = s.activity.color || '#ffffff';
-
-      if(s.fontSizes && s.fontSizes.activity) { if(nameEl) nameEl.style.fontSize = s.fontSizes.activity + 'px'; }
-      else if (nameEl) nameEl.style.fontSize = '';
-
-      slot.style.border = `${borderW} solid rgba(255,255,255,0.4)`;
-
-      if(s.special){
-        const borderColor = s.special.color || '#ffffff';
-        slot.style.border = `${borderW} solid ${borderColor}`;
-
-        const t = document.createElement('div');
-        t.className = 'tag';
-        t.textContent = s.special.name;
-        t.style.color = borderColor;
-        t.style.fontFamily = 'Cinzel, serif';
-        t.style.background = 'transparent';
-
-        if(s.fontSizes && s.fontSizes.tag) t.style.fontSize = s.fontSizes.tag + 'px';
-
-        if (content) content.appendChild(t);
-      }
-    }else{
-      slot.classList.add('empty');
-      if(nameEl) nameEl.textContent = 'Vide';
-      if(nameEl) nameEl.style.color = '#ddd';
-      if(nameEl) nameEl.style.fontSize = '';
-      slot.style.border = `${borderW} solid rgba(255,255,255,0.2)`;
-    }
-  });
-  updateRules();
-}
-
-/* rules: build list but exclude 'maitrise' type (no rules for it) */
-function updateRules(){
-  const keys = Object.keys(state);
-  const seenTypes = new Set();
-  const lines = [];
-
-  keys.forEach(k=>{
-    const s = state[k];
-    if(!s || !s.special) return;
-    const type = s.special.type;
-    if(!type || type === 'maitrise') return; // explicitly skip maitrise
-    if(seenTypes.has(type)) return; // show each special type once
-    seenTypes.add(type);
-
-    const title = s.special.name || (type === 'roulette' ? 'Roulette' : type === 'special' ? 'Soirée spéciale' : type === 'decouverte' ? 'Découverte' : type === 'chill' ? 'CHILL' : 'Personnalisée');
-    const text = s.special.rules || DEFAULT_RULES[type] || '';
-    const color = s.special.color || '#ffffff';
-    lines.push({ title, text, color });
-  });
-
-  if(!lines.length){
-    if (rulesArea) rulesArea.style.display='none';
-    if (rulesContent) rulesContent.innerHTML='';
-  }else{
-    if (rulesArea) rulesArea.style.display='flex';
-    if (rulesContent) rulesContent.innerHTML = lines.map(l =>
-      `<div class="rule-line" style="color:${l.color}"><strong>${l.title} :</strong> ${l.text}</div>`
-    ).join('');
-  }
-}
-
-/* reset */
-if (resetBtn) resetBtn.addEventListener('click', ()=>{
-  if(!confirm('Réinitialiser toutes les cases ?')) return;
-  state = {};
-  refreshGrid();
-});
-
-/* EXPORT PNG */
-if (exportPng) exportPng.addEventListener('click', async () => {
-  if(!canvas || !topbar) return;
-  const originalTopbarParent = topbar.parentNode;
-  const originalTopbarNext = topbar.nextSibling;
-  const originalTopbarStyle = {
-    position: topbar.style.position || '',
-    left: topbar.style.left || '',
-    top: topbar.style.top || '',
-    width: topbar.style.width || '',
-    zIndex: topbar.style.zIndex || ''
-  };
-
-  const prevExportDisplay = exportPng.style.display || '';
-  const prevResetDisplay = resetBtn ? resetBtn.style.display || '' : '';
-
-  exportPng.style.display = 'none';
-  if (resetBtn) resetBtn.style.display = 'none';
-
-  try {
-    canvas.classList.add('capture');
-    if (modalBack) modalBack.style.display = 'none';
-
-    const prevWrapperTransform = canvasWrapper ? canvasWrapper.style.transform : '';
-    const prevWrapperOrigin = canvasWrapper ? canvasWrapper.style.transformOrigin : '';
-    const prevCanvasTransform = canvas.style.transform;
-    const prevCanvasOrigin = canvas.style.transformOrigin;
-
-    if (canvasWrapper) {
-      canvasWrapper.style.transform = 'none';
-      canvasWrapper.style.transformOrigin = 'top left';
-    }
-    canvas.style.transform = 'none';
-    canvas.style.transformOrigin = 'top left';
-
-    await new Promise(r => setTimeout(r, 50));
-
-    const canvasRect = canvas.getBoundingClientRect();
-    const topbarRect = topbar.getBoundingClientRect();
-
-    const relLeft = (topbarRect.left - canvasRect.left) + cssNumber('--export-dates-offset-x');
-    const relTop  = (topbarRect.top  - canvasRect.top)  + cssNumber('--export-dates-offset-y');
-
-    topbar.style.position = 'absolute';
-    topbar.style.left = relLeft + 'px';
-    topbar.style.top = relTop + 'px';
-    topbar.style.width = getComputedStyle(topbar).width;
-    topbar.style.zIndex = 10000;
-
-    canvas.appendChild(topbar);
-
-    const cssTmp = document.createElement('style');
-    cssTmp.id = 'export-dates-temp-style';
-    cssTmp.textContent = `
-      #topbar .date-block .value { font-size: var(--export-dates-font-size) !important; }
-      #topbar .date-block .label { font-size: 14px !important; opacity: .9; }
-      #topbar .btn-primary, #topbar .btn-ghost { display:none !important; }
-    `;
-    canvas.appendChild(cssTmp);
-
-    await new Promise(r => setTimeout(r, 80));
-
-    const img = await html2canvas(canvas, { scale: 2, useCORS: true, backgroundColor: null });
-
-    if (canvasWrapper) {
-      canvasWrapper.style.transform = prevWrapperTransform;
-      canvasWrapper.style.transformOrigin = prevWrapperOrigin;
-    }
-    canvas.style.transform = prevCanvasTransform;
-    canvas.style.transformOrigin = prevCanvasOrigin;
-
-    if (originalTopbarNext) originalTopbarParent.insertBefore(topbar, originalTopbarNext);
-    else originalTopbarParent.appendChild(topbar);
-
-    topbar.style.position = originalTopbarStyle.position;
-    topbar.style.left = originalTopbarStyle.left;
-    topbar.style.top = originalTopbarStyle.top;
-    topbar.style.width = originalTopbarStyle.width;
-    topbar.style.zIndex = originalTopbarStyle.zIndex;
-
-    const cssEl = document.getElementById('export-dates-temp-style');
-    if(cssEl) cssEl.remove();
-
-    function safeDateForFilename(inputValue, displayText) {
-      if (inputValue) {
-        const parts = inputValue.split('-');
-        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
-      }
-      return (displayText || '').replace(/\s+/g, '_').replace(/[\/\\:]/g, '-');
-    }
-    const startSafe = safeDateForFilename(inputStart ? inputStart.value : '', displayStart ? displayStart.textContent : '');
-    const endSafe = safeDateForFilename(inputEnd ? inputEnd.value : '', displayEnd ? displayEnd.textContent : '');
-    const filename = `planning-${startSafe}_${endSafe}.png`;
-
-    const a = document.createElement('a');
-    a.href = img.toDataURL('image/png');
-    a.download = filename;
-    a.click();
-
-  } catch (err) {
-    alert('Erreur PNG : ' + (err && err.message ? err.message : err));
-  } finally {
-    canvas.classList.remove('capture');
-    if (modalBack) modalBack.style.display = 'none';
-    exportPng.style.display = prevExportDisplay;
-    if (resetBtn) resetBtn.style.display = prevResetDisplay;
-  }
-});
-
-/* date pickers: update display on change */
-if (inputStart) inputStart.addEventListener('change', (e)=>{ if (displayStart) displayStart.textContent = formatShortDate(e.target.value); });
-if (inputEnd) inputEnd.addEventListener('change', (e)=>{ if (displayEnd) displayEnd.textContent = formatShortDate(e.target.value); });
-
-/* init */
-(function init(){
-  applyLayout();
-  renderActivityList();
-  refreshGrid();
-  function applyScale(){
-    const canvasW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-w'),10) || 1536;
-    const canvasH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-h'),10) || 1024;
-    const scaleX = (window.innerWidth - 40) / canvasW;
-    const scaleY = (window.innerHeight - 40) / canvasH;
-    const scale = Math.min(scaleX, scaleY, 1);
-    if (canvasWrapper) {
-      canvasWrapper.style.transform = 'scale(' + scale + ')';
-      canvasWrapper.style.transformOrigin = 'top left';
-    } else if (canvas) {
-      canvas.style.transform = 'scale(' + scale + ')';
-      canvas.style.transformOrigin = 'top left';
-    }
-  }
-  applyScale();
-  window.addEventListener('resize', applyScale);
-
-  if (activityFontRange) activityFontRange.value = getDefaultActivityFont();
-  if (activityFontValue) activityFontValue.textContent = (activityFontRange ? activityFontRange.value : getDefaultActivityFont()) + 'px';
-  if (tagFontRange) tagFontRange.value = getDefaultTagFont();
-  if (tagFontValue) tagFontValue.textContent = (tagFontRange ? tagFontRange.value : getDefaultTagFont()) + 'px';
-})();
-
-/* expose setLayout */
-window.setLayout = function(newLayout){
-  Object.assign(layout, newLayout);
-  applyLayoutFromObject(layout);
-  if (newLayout.topbar && topbar) {
-    topbar.style.left = (newLayout.topbar.left ?? layout.topbar.left) + 'px';
-    topbar.style.top = (newLayout.topbar.top ?? layout.topbar.top) + 'px';
-  }
-  if (newLayout.grid && gridWrap) {
-    gridWrap.style.left = (newLayout.grid.left ?? layout.grid.left) + 'px';
-    gridWrap.style.top = (newLayout.grid.top ?? layout.grid.top) + 'px';
-  }
-  if (newLayout.rules && rulesArea) {
-    rulesArea.style.left = (newLayout.rules.left ?? layout.rules.left) + 'px';
-    rulesArea.style.top = (newLayout.rules.top ?? layout.rules.top) + 'px';
-  }
-};
-
-/* Vérifie la présence du logo.png et désactive l'image de fond si introuvable
-   (évite les problèmes lors de l'export si l'image renvoie 404) */
-(function checkLogoExists(){
-  try {
-    const img = new Image();
-    img.onload = function(){ /* tout va bien */ };
-    img.onerror = function(){
-      console.warn('logo.png introuvable — suppression de l\'image de fond.');
-      if (canvas) canvas.style.backgroundImage = 'none';
-    };
-    img.src = './logo.png';
-  } catch(e){
-    console.warn('Erreur lors de la vérification de logo.png', e);
-    if (canvas) canvas.style.backgroundImage = 'none';
-  }
-})();
-</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        const RAID_DATA = ["Désert Perpétuel", "Serment du Disciple", "Origine des Cauchemars",
+            "Jardin du Salut", "Dernier Vœu", "Crypte de la Pierre",
+            "Chute de Cropta", "Chute du Roi", "Caveau de Verre", "Orée du salut"];
+        
+        const DONJON_DATA = ["Équilibre", "Ruine de la Guerrière", "Fantôme des Profondeurs",
+            "Flèche de la Vigie", "Trône Brisé", "Hôte Vesper",
+            "Dualité", "Fosse de l'Hérésie", "Étreinte de l'Avarice", "Prophétie"];
+        
+        const RULE_COLORS = {
+            roulette: '#fbbf24',
+            special: '#ef4444',
+            decouverte: '#10b981',
+            chill: '#8b5cf6',
+            maitrise: '#6b7280'
+        };
+        
+        const DEFAULT_RULES = {
+            roulette: "🎲 Chaque joueur a droit à 3 tirages aléatoires pour déterminer son équipement.",
+            special: "🌟 Session avec des joueurs expérimentés pour un apprentissage approfondi.",
+            decouverte: "🔍 Ouvert à tous, débutants bienvenus !",
+            chill: "😎 Ambiance détente, pas de pression."
+        };
+        
+        const COLORS = ['#e5e7eb', '#ef4444', '#fbbf24', '#10b981', '#8b5cf6', '#9ca3af'];
+        
+        let planningData = {};
+        let currentEditSlot = null;
+        const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+        const timeSlots = ['15h', '21h'];
+        
+        function formatDateFrench(date) {
+            const mois = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+            return {
+                jour: date.getDate(),
+                mois: mois[date.getMonth()],
+                annee: date.getFullYear()
+            };
+        }
+        
+        function updateDateAdminTitle() {
+            const startDate = new Date(document.getElementById('startDateInput').value);
+            const endDate = new Date(document.getElementById('endDateInput').value);
+            const admin = document.getElementById('adminSelect').value;
+            
+            const start = formatDateFrench(startDate);
+            const end = formatDateFrench(endDate);
+            
+            let title = '';
+            if (start.mois === end.mois) {
+                title = `📅 Planning du ${start.jour} au ${end.jour} ${start.mois} ${start.annee} • ${admin}`;
+            } else {
+                title = `📅 Planning du ${start.jour} ${start.mois} au ${end.jour} ${end.mois} ${end.annee} • ${admin}`;
+            }
+            
+            document.getElementById('dateAdminTitle').textContent = title;
+        }
+        
+        function initDates() {
+            const today = new Date();
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+            const saturday = new Date(monday);
+            saturday.setDate(monday.getDate() + 5);
+            
+            document.getElementById('startDateInput').value = monday.toISOString().split('T')[0];
+            document.getElementById('endDateInput').value = saturday.toISOString().split('T')[0];
+            updateDateAdminTitle();
+        }
+        
+        function generateGrid() {
+            const daysHeader = document.getElementById('daysHeader');
+            daysHeader.innerHTML = '<div class="day-cell"></div>';
+            days.forEach(day => {
+                daysHeader.innerHTML += `<div class="day-cell">${day}</div>`;
+            });
+            
+            const planningGrid = document.getElementById('planningGrid');
+            planningGrid.innerHTML = '';
+            
+            timeSlots.forEach(slot => {
+                const row = document.createElement('div');
+                row.className = 'time-slot-row';
+                row.innerHTML = `<div class="time-label">${slot}</div>`;
+                
+                days.forEach((_, dayIndex) => {
+                    const card = document.createElement('div');
+                    card.className = 'activity-card empty';
+                    card.setAttribute('data-day', dayIndex);
+                    card.setAttribute('data-slot', slot);
+                    card.innerHTML = `
+                        <div class="activity-name">⚒️ Vide</div>
+                        <div class="gear-icon">🔧</div>
+                    `;
+                    row.appendChild(card);
+                });
+                planningGrid.appendChild(row);
+            });
+            
+            loadDataToGrid();
+        }
+        
+        function loadDataToGrid() {
+            const cards = document.querySelectorAll('.activity-card');
+            cards.forEach(card => {
+                const day = card.getAttribute('data-day');
+                const slot = card.getAttribute('data-slot');
+                const key = `${day}-${slot}`;
+                const data = planningData[key];
+                
+                if (data) {
+                    card.classList.remove('empty');
+                    const nameDiv = card.querySelector('.activity-name');
+                    nameDiv.textContent = data.activityName;
+                    nameDiv.style.color = data.textColor;
+                    nameDiv.style.fontSize = data.textSize + 'px';
+                    
+                    card.style.borderColor = data.tagColor || 'rgba(192,192,192,0.3)';
+                    
+                    if (data.tagName && data.tagName !== 'none' && data.specialType !== 'none') {
+                        let tagDiv = card.querySelector('.activity-tag');
+                        if (!tagDiv) {
+                            tagDiv = document.createElement('div');
+                            tagDiv.className = 'activity-tag';
+                            card.appendChild(tagDiv);
+                        }
+                        tagDiv.textContent = data.tagName;
+                        tagDiv.style.color = data.tagColor;
+                        tagDiv.style.fontSize = data.tagSize + 'px';
+                    } else {
+                        const oldTag = card.querySelector('.activity-tag');
+                        if (oldTag) oldTag.remove();
+                    }
+                } else {
+                    card.classList.add('empty');
+                    const nameDiv = card.querySelector('.activity-name');
+                    nameDiv.textContent = '⚒️ Vide';
+                    nameDiv.style.color = '#6b7280';
+                    nameDiv.style.fontSize = '20px';
+                    card.style.borderColor = 'rgba(192,192,192,0.1)';
+                    const oldTag = card.querySelector('.activity-tag');
+                    if (oldTag) oldTag.remove();
+                }
+            });
+            updateRulesDisplay();
+        }
+        
+        function updateRulesDisplay() {
+            const rulesMap = new Map();
+            
+            Object.values(planningData).forEach(data => {
+                if (data.specialType && data.specialType !== 'none' && data.specialType !== 'maitrise') {
+                    const key = data.specialType;
+                    if (!rulesMap.has(key)) {
+                        rulesMap.set(key, {
+                            name: data.tagName,
+                            rules: data.specialRules || DEFAULT_RULES[data.specialType] || '',
+                            color: RULE_COLORS[data.specialType] || data.tagColor || '#ef4444'
+                        });
+                    }
+                }
+            });
+            
+            const rulesSection = document.getElementById('rulesSection');
+            const rulesList = document.getElementById('rulesList');
+            
+            if (rulesMap.size === 0) {
+                rulesSection.style.display = 'none';
+            } else {
+                rulesSection.style.display = 'block';
+                rulesList.innerHTML = '';
+                for (const [type, rule] of rulesMap) {
+                    rulesList.innerHTML += `
+                        <div class="rule-item" style="border-left-color: ${rule.color}">
+                            <div class="rule-title" style="color: ${rule.color}">${rule.name}</div>
+                            <div>${rule.rules}</div>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        function saveToLocalStorage() {
+            localStorage.setItem('forgesPlanning', JSON.stringify(planningData));
+        }
+        
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('forgesPlanning');
+            if (saved) {
+                planningData = JSON.parse(saved);
+                loadDataToGrid();
+            }
+        }
+        
+        function openModal(card) {
+            currentEditSlot = card;
+            const day = card.getAttribute('data-day');
+            const slot = card.getAttribute('data-slot');
+            const key = `${day}-${slot}`;
+            const data = planningData[key] || {};
+            
+            document.getElementById('activityType').value = data.activityType || 'raid';
+            document.getElementById('textColor').value = data.textColor || '#e5e7eb';
+            document.getElementById('textSize').value = data.textSize || 20;
+            document.getElementById('textSizeValue').textContent = (data.textSize || 20) + 'px';
+            document.getElementById('specialType').value = data.specialType || 'none';
+            document.getElementById('specialRules').value = data.specialRules || '';
+            document.getElementById('tagColor').value = data.tagColor || RULE_COLORS[data.specialType] || '#ef4444';
+            document.getElementById('tagSize').value = data.tagSize || 14;
+            document.getElementById('tagSizeValue').textContent = (data.tagSize || 14) + 'px';
+            
+            const specialType = data.specialType || 'none';
+            const specialNameGroup = document.getElementById('specialNameGroup');
+            if (specialType === 'custom') {
+                specialNameGroup.style.display = 'block';
+                document.getElementById('specialName').value = data.tagName || '';
+            } else {
+                specialNameGroup.style.display = 'none';
+            }
+            
+            updateActivityList(data.activityName || '');
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        function updateActivityList(selectedName) {
+            const type = document.getElementById('activityType').value;
+            const container = document.getElementById('activityList');
+            let activities = [];
+            
+            if (type === 'raid') activities = RAID_DATA;
+            else if (type === 'donjon') activities = DONJON_DATA;
+            else if (type === 'libre') {
+                container.innerHTML = '<div style="padding: 12px; text-align: center; opacity: 0.7;">✨ Activité libre (pas de sélection)</div>';
+                return;
+            } else if (type === 'custom') {
+                container.innerHTML = '<div style="padding: 12px; text-align: center;">✏️ Saisissez le nom ci-dessous</div><input type="text" id="customActivityName" placeholder="Nom de l\'activité" style="margin-top: 8px;">';
+                if (selectedName && !RAID_DATA.includes(selectedName) && !DONJON_DATA.includes(selectedName)) {
+                    setTimeout(() => {
+                        const input = document.getElementById('customActivityName');
+                        if (input) input.value = selectedName;
+                    }, 0);
+                }
+                return;
+            }
+            
+            container.innerHTML = activities.map(act => `
+                <div style="padding: 8px; margin: 4px 0; background: rgba(192,192,192,0.05); border-radius: 6px; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(192,192,192,0.1);" 
+                     onclick="this.style.background='rgba(239,68,68,0.1)'; document.getElementById('tempSelectedActivity').value='${act}';">
+                    ${act}
+                </div>
+            `).join('');
+            container.innerHTML += '<input type="hidden" id="tempSelectedActivity" value="' + (selectedName || '') + '">';
+        }
+        
+        function saveModal() {
+            if (!currentEditSlot) return;
+            
+            const day = currentEditSlot.getAttribute('data-day');
+            const slot = currentEditSlot.getAttribute('data-slot');
+            const key = `${day}-${slot}`;
+            
+            let activityName = '';
+            const type = document.getElementById('activityType').value;
+            
+            if (type === 'libre') {
+                activityName = '⚒️ Activité libre';
+            } else if (type === 'custom') {
+                const customInput = document.getElementById('customActivityName');
+                activityName = customInput ? customInput.value : 'Activité personnalisée';
+                if (!activityName) activityName = '⚒️ Activité';
+            } else {
+                const tempSelected = document.getElementById('tempSelectedActivity');
+                activityName = tempSelected ? tempSelected.value : '';
+                if (!activityName && type === 'raid') activityName = RAID_DATA[0];
+                if (!activityName && type === 'donjon') activityName = DONJON_DATA[0];
+            }
+            
+            if (!activityName) activityName = '⚒️ Activité';
+            
+            const specialType = document.getElementById('specialType').value;
+            let tagName = '';
+            if (specialType === 'custom') {
+                tagName = document.getElementById('specialName').value;
+            } else if (specialType !== 'none') {
+                const specialNames = {
+                    roulette: '🎲 Roulette',
+                    special: '🌟 Soirée spéciale',
+                    decouverte: '🔍 Découverte',
+                    chill: '😎 Chill',
+                    maitrise: '🏆 Maîtrise'
+                };
+                tagName = specialNames[specialType] || '';
+            }
+            
+            const planningItem = {
+                activityName: activityName,
+                activityType: type,
+                textColor: document.getElementById('textColor').value,
+                textSize: parseInt(document.getElementById('textSize').value),
+                specialType: specialType,
+                tagName: tagName,
+                specialRules: document.getElementById('specialRules').value,
+                tagColor: document.getElementById('tagColor').value,
+                tagSize: parseInt(document.getElementById('tagSize').value)
+            };
+            
+            if (specialType === 'none') {
+                delete planningItem.tagName;
+                delete planningItem.specialRules;
+            }
+            
+            planningData[key] = planningItem;
+            saveToLocalStorage();
+            loadDataToGrid();
+            closeModal();
+            showToast('✅ Activité enregistrée !');
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            currentEditSlot = null;
+        }
+        
+        function resetAll() {
+            if (confirm('⚠️ Voulez-vous vraiment effacer TOUT le planning ?')) {
+                planningData = {};
+                saveToLocalStorage();
+                loadDataToGrid();
+                showToast('🗑️ Planning réinitialisé');
+            }
+        }
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        async function exportPNG() {
+            const container = document.getElementById('appContainer');
+            
+            container.style.overflow = 'visible';
+            container.classList.add('capture-mode');
+            
+            await new Promise(r => setTimeout(r, 100));
+            
+            try {
+                showToast('📸 Génération de l\'image...');
+                
+                const canvas = await html2canvas(container, {
+                    scale: 2,
+                    backgroundColor: '#0a0a0c',
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: false,
+                    windowWidth: container.scrollWidth,
+                    windowHeight: container.scrollHeight
+                });
+                
+                const admin = document.getElementById('adminSelect').value;
+                const link = document.createElement('a');
+                link.download = `planning_${admin}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                showToast('✅ Export terminé !');
+            } catch (error) {
+                console.error('Export error:', error);
+                showToast('❌ Erreur lors de l\'export');
+            } finally {
+                container.classList.remove('capture-mode');
+                container.style.overflow = '';
+            }
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('planningGrid').addEventListener('click', (e) => {
+                const card = e.target.closest('.activity-card');
+                if (card && !e.target.classList.contains('gear-icon')) {
+                    openModal(card);
+                }
+            });
+            
+            document.getElementById('activityType').addEventListener('change', () => updateActivityList(''));
+            document.getElementById('specialType').addEventListener('change', (e) => {
+                const specialNameGroup = document.getElementById('specialNameGroup');
+                specialNameGroup.style.display = e.target.value === 'custom' ? 'block' : 'none';
+                
+                if (DEFAULT_RULES[e.target.value]) {
+                    document.getElementById('specialRules').value = DEFAULT_RULES[e.target.value];
+                }
+                
+                if (RULE_COLORS[e.target.value]) {
+                    document.getElementById('tagColor').value = RULE_COLORS[e.target.value];
+                }
+            });
+            
+            document.getElementById('textSize').addEventListener('input', (e) => {
+                document.getElementById('textSizeValue').textContent = e.target.value + 'px';
+            });
+            
+            document.getElementById('tagSize').addEventListener('input', (e) => {
+                document.getElementById('tagSizeValue').textContent = e.target.value + 'px';
+            });
+            
+            document.getElementById('saveModalBtn').addEventListener('click', saveModal);
+            document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+            document.getElementById('closeModal').addEventListener('click', closeModal);
+            document.getElementById('resetBtn').addEventListener('click', resetAll);
+            document.getElementById('exportBtn').addEventListener('click', exportPNG);
+            document.getElementById('adminSelect').addEventListener('change', updateDateAdminTitle);
+            
+            const textPalette = document.getElementById('textColorPalette');
+            const tagPalette = document.getElementById('tagColorPalette');
+            
+            COLORS.forEach(color => {
+                const swatch1 = document.createElement('div');
+                swatch1.className = 'color-option';
+                swatch1.style.background = color;
+                swatch1.onclick = () => document.getElementById('textColor').value = color;
+                textPalette.appendChild(swatch1);
+                
+                const swatch2 = document.createElement('div');
+                swatch2.className = 'color-option';
+                swatch2.style.background = color;
+                swatch2.onclick = () => document.getElementById('tagColor').value = color;
+                tagPalette.appendChild(swatch2);
+            });
+        }
+        
+        function init() {
+            initDates();
+            generateGrid();
+            loadFromLocalStorage();
+            setupEventListeners();
+        }
+        
+        init();
+    </script>
 </body>
 </html>
